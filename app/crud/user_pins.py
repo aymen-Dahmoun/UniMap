@@ -1,48 +1,50 @@
 from sqlalchemy.orm import Session
-from app.models.user_pins import 
-from app.schemas.user_pins import Create
-from passlib.hash import bcrypt
+from app.models.user_pins import UserPin
+from app.schemas.user_pins import UserPinCreate, UserPinUpdate
 
 
-def create_user_pins(db: Session, data: Create):
-    hashed_password = None
-    if hasattr(data, "password"):
-        hashed_password = bcrypt.hash(data.password)
-
-    db_obj = (
-        **data.dict(exclude={"password"}),
-        hashed_password=hashed_password if hashed_password else None
+def create_user_pin(db: Session, data: UserPinCreate):
+    db_obj = UserPin(
+        user_id=data.user_id,
+        type=data.type,
+        message=data.message,
+        coords=f"SRID=4326;{data.coords}",
     )
-
     db.add(db_obj)
     db.commit()
     db.refresh(db_obj)
     return db_obj
 
 
-def get_user_pinss(db: Session):
-    return db.query().all()
+def get_user_pins(db: Session):
+    return db.query(UserPin).all()
 
 
-def get_user_pins(db: Session, id: int):
-    return db.query().filter(.id == id).first()
+def get_user_pin(db: Session, id: int):
+    return db.query(UserPin).filter(UserPin.id == id).first()
 
 
-def update_user_pins(db: Session, id: int, data):
-    obj = db.query().filter(.id == id).first()
+def update_user_pin(db: Session, id: int, data: UserPinUpdate):
+    obj = db.query(UserPin).filter(UserPin.id == id).first()
     if not obj:
         return None
 
-    for key, value in data.dict(exclude_unset=True).items():
-        setattr(obj, key, value)
+    if data.user_id is not None:
+        obj.user_id = data.user_id
+    if data.type is not None:
+        obj.type = data.type
+    if data.message is not None:
+        obj.message = data.message
+    if data.coords is not None:
+        obj.coords = f"SRID=4326;{data.coords}"
 
     db.commit()
     db.refresh(obj)
     return obj
 
 
-def delete_user_pins(db: Session, id: int):
-    obj = db.query().filter(.id == id).first()
+def delete_user_pin(db: Session, id: int):
+    obj = db.query(UserPin).filter(UserPin.id == id).first()
     if not obj:
         return None
 

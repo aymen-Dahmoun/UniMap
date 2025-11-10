@@ -1,14 +1,15 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
-from core.database import Base
+from sqlalchemy import ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from geoalchemy2 import Geometry
-from sqlalchemy.orm import relationship
+from core.database import Base
+from app.models.buildings import Buildings
 
 class Rooms(Base):
     __tablename__ = "rooms"
 
-    id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False, unique=True)
-    geometry = Column(Geometry("POINT", srid=4326))
-    building_id = Column(Integer, ForeignKey("buildingss.id", ondelete="CASCADE"))
+    id: Mapped[int] = mapped_column(primary_key=True, index=True)
+    name: Mapped[str] = mapped_column(nullable=False, unique=True)
+    geometry: Mapped[str] = mapped_column(Geometry("POINT", srid=4326))
+    building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id", ondelete="CASCADE"))
 
-    building = relationship("Buildings", back_populates="rooms")
+    building: Mapped["Buildings"] = relationship("Buildings", back_populates="rooms")
