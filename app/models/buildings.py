@@ -1,4 +1,5 @@
 from sqlalchemy.orm import Mapped, mapped_column
+from app.models.rooms import Rooms
 from core.database import Base
 from geoalchemy2 import Geometry
 from sqlalchemy.orm import relationship
