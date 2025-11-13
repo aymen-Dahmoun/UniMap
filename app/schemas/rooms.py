@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 
 class RoomsBase(BaseModel):
     name: str
@@ -16,6 +16,8 @@ class RoomsUpdate(BaseModel):
 
 class RoomsResponse(RoomsBase):
     id: int
+    geometry: Any
+    building_id: int
 
     class Config:
         from_attributes = True
