@@ -1,8 +1,8 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from geoalchemy2 import Geometry
-from core.database import Base
-from app.models.buildings import Buildings
+from app.core.database import Base
+# from app.models.buildings import Buildings
 
 class Rooms(Base):
     __tablename__ = "rooms"
@@ -12,4 +12,4 @@ class Rooms(Base):
     geometry: Mapped[str] = mapped_column(Geometry("POINT", srid=4326))
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id", ondelete="CASCADE"))
 
-    building: Mapped["Buildings"] = relationship("Buildings", back_populates="rooms")
+    building = relationship("Buildings", back_populates="rooms")

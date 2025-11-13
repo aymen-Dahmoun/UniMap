@@ -1,8 +1,7 @@
-from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy import String, Text, ForeignKey
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 from geoalchemy2 import Geometry
-from core.database import Base
-from app.models.user import User
+from app.core.database import Base
 
 class UserPin(Base):
     __tablename__ = "user_pins"
@@ -13,4 +12,4 @@ class UserPin(Base):
     type: Mapped[str] = mapped_column(String(50), nullable=False)
     message: Mapped[str | None] = mapped_column(Text, nullable=True)
 
-    user: Mapped["User"] = relationship("User", back_populates="pins")
+    user = relationship("User", back_populates="pins")

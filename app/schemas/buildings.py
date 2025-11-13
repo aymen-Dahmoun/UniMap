@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 
 class BuildingsBase(BaseModel):
     name: str
@@ -13,7 +13,7 @@ class BuildingsUpdate(BaseModel):
 
 class BuildingsResponse(BuildingsBase):
     id: int
-    geometry: str
+    geometry: Any
 
     class Config:
-        orm_mode = True
+        from_attributes = True

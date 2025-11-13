@@ -1,8 +1,8 @@
 from sqlalchemy import ForeignKey, Integer, Float
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from geoalchemy2 import Geometry
-from core.database import Base
-from models.rooms import Rooms
+from app.core.database import Base
+from app.models.rooms import Rooms
 
 class Paths(Base):
     __tablename__ = "paths"
