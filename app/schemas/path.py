@@ -1,5 +1,5 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List, Optional, Any
 
 class PathBase(BaseModel):
     start_room_id: int
@@ -12,6 +12,11 @@ class PathCreate(PathBase):
 
 class PathResponse(PathBase):
     id: int
+    start_room_id: int
+    end_room_id: int
+    distance: float
+    geometry: Any
+
 class NavigationResponse:
     sucess: bool
     total_distance: float

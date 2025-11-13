@@ -1,6 +1,7 @@
 from geoalchemy2.shape import to_shape
 from app.models.buildings import Buildings
 from app.models.rooms import Rooms
+from app.models.paths import Paths
 
 def building_to_geojson(building: Buildings):
     geo = to_shape(building.geometry)
@@ -17,4 +18,14 @@ def room_to_geojson(room: Rooms):
         "name": room.name,
         "building_id": room.building_id,
         "geometry": geo.__geo_interface__,
+    }
+
+def path_to_geojson(path: Paths):
+    geo = to_shape(path.geometry)
+    return {
+        "id": path.id,
+        "start_room_id": path.name,
+        "end_room_id": path.building_id,
+        "geometry": geo.__geo_interface__,
+        "distance": path.distance
     }
