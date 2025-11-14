@@ -17,8 +17,8 @@ class PathResponse(PathBase):
     distance: float
     geometry: Any
 
-class NavigationResponse:
-    sucess: bool
+class NavigationResponse(BaseModel):
+    success: bool
     total_distance: float
     path_rooms: Optional[List[PathBase]] = None
     path_room_ids: Optional[List[int]] = None

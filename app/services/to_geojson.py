@@ -24,8 +24,8 @@ def path_to_geojson(path: Paths):
     geo = to_shape(path.geometry)
     return {
         "id": path.id,
-        "start_room_id": path.name,
-        "end_room_id": path.building_id,
+        "start_room_id": path.start_room_id,
+        "end_room_id": path.end_room_id,
         "geometry": geo.__geo_interface__,
         "distance": path.distance
     }

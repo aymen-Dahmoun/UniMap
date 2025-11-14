@@ -15,7 +15,7 @@ def list_roomss(db: Session = Depends(get_db)):
 
 @router.post("/", response_model=RoomsResponse)
 def create_rooms(data: RoomsCreate, db: Session = Depends(get_db)):
-    obj = Rooms(**data.dict())
+    obj = Rooms(**data.model_dump())
     db.add(obj)
     db.commit()
     db.refresh(obj)
