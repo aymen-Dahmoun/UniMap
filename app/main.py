@@ -3,8 +3,9 @@ from .core.database import Base, engine
 from .api.router import api_router
 from app.models import user, user_pins, buildings, rooms, paths
 
-
+# Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
+
 app = FastAPI(title="UniMap")
 
 app.include_router(api_router)

@@ -11,5 +11,6 @@ class Rooms(Base):
     name: Mapped[str] = mapped_column(nullable=False, unique=True)
     geometry: Mapped[WKBElement] = mapped_column(Geometry("POINT", srid=4326))
     building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id", ondelete="CASCADE"))
+    floor: Mapped[int] = mapped_column(default=1)
 
     building = relationship("Buildings", back_populates="rooms")

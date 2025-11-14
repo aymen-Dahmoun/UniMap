@@ -2,25 +2,29 @@ from pydantic import BaseModel
 from typing import List, Optional, Any
 
 class PathBase(BaseModel):
-    start_room_id: int
-    end_room_id: int
+    start_point_id: Any
+    end_point_id: Any
     distance: float
     geometry: str
 
-class PathCreate(PathBase):
-    pass
+class PathCreate(BaseModel):
+    start_point_id: int
+    end_point_id: int
+    distance: float
+    floor: Optional[int]
+
 
 class PathResponse(PathBase):
     id: int
-    start_room_id: int
-    end_room_id: int
+    start_point_id: Any
+    end_point_id: Any
     distance: float
     geometry: Any
 
 class NavigationResponse(BaseModel):
     success: bool
     total_distance: float
-    path_rooms: Optional[List[PathBase]] = None
+    path_points: Optional[List[Any]] = None
     path_room_ids: Optional[List[int]] = None
     
     class Config:

@@ -11,5 +11,6 @@ class Buildings(Base):
     id : Mapped[int] = mapped_column(primary_key=True, index=True)
     name  : Mapped[str] = mapped_column(unique=True, nullable=True)
     geometry: Mapped[WKBElement] = mapped_column(Geometry("POLYGON", srid=4326))
+    floor: Mapped[int] = mapped_column(default=1)
 
     rooms = relationship("Rooms", back_populates="building", cascade="all, delete-orphan")

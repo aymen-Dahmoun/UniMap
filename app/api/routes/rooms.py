@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Union
 from app.core.database import get_db
 from app.schemas.rooms import RoomsCreate, RoomsResponse
 from app.models.rooms import Rooms
@@ -13,10 +13,22 @@ def list_roomss(db: Session = Depends(get_db)):
     rooms = db.query(Rooms).all()
     return [room_to_geojson(r) for r in rooms]
 
-@router.post("/", response_model=RoomsResponse)
-def create_rooms(data: RoomsCreate, db: Session = Depends(get_db)):
-    obj = Rooms(**data.model_dump())
-    db.add(obj)
-    db.commit()
-    db.refresh(obj)
-    return room_to_geojson(obj)
+
+
+@router.post("/", response_model=List[RoomsResponse])
+def create_rooms(
+    data: Union[RoomsCreate, List[RoomsCreate]],
+    db: Session = Depends(get_db)
+):
+    rooms_data = data if isinstance(data, list) else [data]
+
+    results = []
+
+    for room in rooms_data:
+        obj = Rooms(**room.model_dump())
+        db.add(obj)
+        db.commit()
+        db.refresh(obj)
+        results.append(room_to_geojson(obj))
+
+    return results
