@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
 from app.models.rooms import Rooms
 from app.schemas.rooms import RoomsCreate, RoomsUpdate
+from app.schemas.map import RoomSchema
+from geoalchemy2.shape import from_shape
+from shapely import wkt
 
 def create_room(db: Session, data: RoomsCreate):
     db_obj = Rooms(
@@ -13,6 +16,16 @@ def create_room(db: Session, data: RoomsCreate):
     db.refresh(db_obj)
     return db_obj
 
+def create_room_flush(db: Session, r: RoomSchema, building_id: int):
+    room = Rooms(
+        name=r.name,
+        floor=r.floor,
+        building_id=building_id,
+        geometry=from_shape(wkt.loads(r.geometry), srid=4326)
+    )
+    db.add(room)
+    db.flush()
+    return room
 
 def get_rooms(db: Session):
     return db.query(Rooms).all()

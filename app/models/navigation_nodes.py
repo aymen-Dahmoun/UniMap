@@ -7,6 +7,7 @@ class NavigationNode(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
     geometry = mapped_column(Geometry("POINT", srid=4326))
+    name: Mapped[str] = mapped_column()
     floor: Mapped[int] = mapped_column(nullable=False)
     node_type: Mapped[str] = mapped_column(default="normal")
     is_accessible: Mapped[bool] = mapped_column(default=True)

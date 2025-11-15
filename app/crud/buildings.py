@@ -1,6 +1,9 @@
 from sqlalchemy.orm import Session
 from app.models.buildings import Buildings
 from app.schemas.buildings import BuildingsCreate, BuildingsUpdate, BuildingsBase
+from geoalchemy2.shape import from_shape
+from app.schemas.map import BuildingSchema
+from shapely import wkt
 
 def create_building(db: Session, data: BuildingsCreate):
     db_obj = Buildings(name=data.name, geometry=f"SRID=4326;{data.geometry}")
@@ -9,6 +12,15 @@ def create_building(db: Session, data: BuildingsCreate):
     db.refresh(db_obj)
     return db_obj
 
+def create_building_flush(db: Session, b: BuildingSchema):
+    building = Buildings(
+        name=b.name,
+        floor=b.floor,
+        geometry=from_shape(wkt.loads(b.geometry), srid=4326)
+    )
+    db.add(building)
+    db.flush()
+    return building
 
 def get_buildings(db: Session):
     return db.query(Buildings).all()

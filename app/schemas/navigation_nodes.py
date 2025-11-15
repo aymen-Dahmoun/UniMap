@@ -10,6 +10,9 @@ class NavigationNodeBase(BaseModel):
 
 class NavigationNodeCreate(NavigationNodeBase):
     geometry: Any
+    name: str
+    floor: int
+    node_type: str = "normal"
 
 
 class NavigationNodeResponse(NavigationNodeBase):

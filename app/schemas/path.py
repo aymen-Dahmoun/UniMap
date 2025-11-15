@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import List, Optional, Any
+from app.schemas.points import PointsBase
 
 class PathBase(BaseModel):
     start_point_id: Any
@@ -8,11 +9,10 @@ class PathBase(BaseModel):
     geometry: str
 
 class PathCreate(BaseModel):
-    start_point_id: int
-    end_point_id: int
+    start_point_id: PointsBase
+    end_point_id: PointsBase
     distance: float
     floor: Optional[int]
-
 
 class PathResponse(PathBase):
     id: int

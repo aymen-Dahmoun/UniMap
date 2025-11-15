@@ -4,6 +4,7 @@ from typing import List, Union
 from app.core.database import get_db
 from app.schemas.rooms import RoomsCreate, RoomsResponse
 from app.models.rooms import Rooms
+from app.models.points import Points
 from app.services.to_geojson import room_to_geojson
 
 router = APIRouter(prefix="/rooms", tags=["Rooms"])
@@ -30,5 +31,14 @@ def create_rooms(
         db.commit()
         db.refresh(obj)
         results.append(room_to_geojson(obj))
+
+        point = Points(
+            type="room",
+            ref_id=obj.id,
+            floor=obj.floor
+        )
+        db.add(point)
+        db.commit()
+        db.refresh(point)
 
     return results

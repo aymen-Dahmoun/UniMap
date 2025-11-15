@@ -2,6 +2,8 @@ from geoalchemy2.shape import to_shape
 from app.models.buildings import Buildings
 from app.models.rooms import Rooms
 from app.models.paths import Paths
+from app.models.navigation_nodes import NavigationNode
+
 
 def building_to_geojson(building: Buildings):
     geo = to_shape(building.geometry)
@@ -28,4 +30,13 @@ def path_to_geojson(path: Paths):
         "end_room_id": path.end_room_id,
         "geometry": geo.__geo_interface__,
         "distance": path.distance
+    }
+
+def node_to_geojson(node: NavigationNode):
+    geo = to_shape(node.geometry)
+    return {
+        "id": node.id,
+        "node_type": node.node_type,
+        "geometry": geo.__geo_interface__,
+        "is_accessible": node.is_accessible
     }

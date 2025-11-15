@@ -1,82 +1,92 @@
-# app/services/pathfinder.py
 import networkx as nx
 from sqlalchemy.orm import Session
 from app.models.paths import Paths
-from app.models.rooms import Rooms
+from app.models.points import Points
 from typing import List, Dict, Any
-import networkx as nx
-import matplotlib.pyplot as plt
-
-# def draw_graph(G, filename="graph.png"):
-#     pos = nx.spring_layout(G, seed=42)
-#     nx.draw(G, pos, with_labels=True, node_color="lightblue", node_size=800, font_size=10)
-#     labels = nx.get_edge_attributes(G, "weight")
-#     nx.draw_networkx_edge_labels(G, pos, edge_labels=labels)
-#     plt.savefig(filename)
-#     plt.close()
 
 class PathFinder:
     def __init__(self):
         self.graph = nx.Graph()
         
     def build_graph_from_db(self, db: Session):
-        """Build NetworkX graph from paths in database"""
+        """Build NetworkX graph from Paths and Points"""
         self.graph.clear()
-        
+
+        points = db.query(Points).all()
+        for point in points:
+            self.graph.add_node(
+                point.id,
+                type=point.type,
+                ref_id=point.ref_id,
+                floor=point.floor
+            )
+
         paths = db.query(Paths).all()
-        
         for path in paths:
             self.graph.add_edge(
                 path.start_point_id,
                 path.end_point_id,
                 weight=path.distance,
                 path_id=path.id,
-                geometry=path.geometry
+                geometry=path.geometry,
+                floor=path.floor
             )
-        # draw_graph(G=self.graph)
-        
         return len(paths)
     
-    def find_shortest_path(self, start_point_id: int, end_point_id: int) -> Dict[str, Any]:
-        """Find shortest path between two rooms"""
+    def resolve_point(self, db: Session, ref: Dict[str, Any]) -> int:
+        """
+        Resolve a room/node reference to Points.id
+        """
+        point = db.query(Points).filter_by(type=ref["type"], ref_id=ref["ref_id"]).first()
+        if not point:
+            raise ValueError(f"No point found for {ref}")
+        return point.id
+    
+    def find_shortest_path(self, db: Session, start_ref: Dict[str, Any], end_ref: Dict[str, Any]) -> Dict[str, Any]:
+        """
+        Find shortest path between two Points (can be room or nav node)
+        """
         try:
-            path_room_ids = nx.shortest_path(
-                self.graph, 
-                start_point_id, 
-                end_point_id, 
-                weight='weight'
-            )
+            start_id = self.resolve_point(db, start_ref)
+            end_id = self.resolve_point(db, end_ref)
             
+            path_point_ids = nx.shortest_path(
+                self.graph,
+                source=start_id,
+                target=end_id,
+                weight="weight"
+            )
             total_distance = nx.shortest_path_length(
-                self.graph, 
-                start_point_id, 
-                end_point_id, 
-                weight='weight'
+                self.graph,
+                source=start_id,
+                target=end_id,
+                weight="weight"
             )
             
+            # Collect segment details
             path_segments = []
-            for i in range(len(path_room_ids) - 1):
-                start_id = path_room_ids[i]
-                end_id = path_room_ids[i + 1]
-                
-                edge_data = self.graph.get_edge_data(start_id, end_id)
+            for i in range(len(path_point_ids) - 1):
+                start = path_point_ids[i]
+                end = path_point_ids[i + 1]
+                edge_data = self.graph.get_edge_data(start, end)
                 path_segments.append({
-                    'start_point_id': start_id,
-                    'end_point_id': end_id,
-                    'distance': edge_data['weight'],
-                    'geometry': edge_data['geometry']
+                    "start_point_id": start,
+                    "end_point_id": end,
+                    "distance": edge_data["weight"],
+                    "geometry": edge_data["geometry"]
                 })
             
             return {
-                'path_room_ids': path_room_ids,
-                'total_distance': total_distance,
-                'path_segments': path_segments,
-                'success': True
+                "success": True,
+                "path_points": path_point_ids,
+                "total_distance": total_distance,
+                "path_segments": path_segments
             }
-            
+        
         except nx.NetworkXNoPath:
-            return {'success': False, 'error': 'No path found between the specified rooms'}
+            return {"success": False, "error": "No path found between the specified points"}
         except nx.NodeNotFound:
-            return {'success': False, 'error': 'One or both rooms not found in path network'}
+            return {"success": False, "error": "One or both points not found in the graph"}
+        except ValueError as e:
+            return {"success": False, "error": str(e)}
 
-path_finder = PathFinder()
