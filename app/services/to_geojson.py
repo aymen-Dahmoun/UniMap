@@ -3,6 +3,7 @@ from app.models.buildings import Buildings
 from app.models.rooms import Rooms
 from app.models.paths import Paths
 from app.models.navigation_nodes import NavigationNode
+from app.schemas.room_metadata import RoomMetadataResponse
 
 
 def building_to_geojson(building: Buildings):
@@ -20,6 +21,7 @@ def room_to_geojson(room: Rooms):
         "name": room.name,
         "building_id": room.building_id,
         "geometry": geo.__geo_interface__,
+        "metadata": RoomMetadataResponse.model_validate(room.metadata) if room.metadata else None
     }
 
 def path_to_geojson(path: Paths):

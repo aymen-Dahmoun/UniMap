@@ -1,5 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional, Any
+from app.schemas.room_metadata import RoomMetadataResponse
 
 class RoomsBase(BaseModel):
     name: str
@@ -20,6 +21,7 @@ class RoomsResponse(RoomsBase):
     geometry: Any
     building_id: int
     floor: int
+    metadata: Optional[RoomMetadataResponse] = None
 
     class Config:
         from_attributes = True

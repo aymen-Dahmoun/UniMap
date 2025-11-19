@@ -14,3 +14,9 @@ class Rooms(Base):
     floor: Mapped[int] = mapped_column(default=1)
 
     building = relationship("Buildings", back_populates="rooms")
+    room_metadata: Mapped["RoomMetadata"] = relationship(
+    back_populates="room",
+    uselist=False
+)
+
+
