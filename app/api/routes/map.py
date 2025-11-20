@@ -12,12 +12,15 @@ from app.crud.buildings import create_building_flush
 from app.crud.points import create_point
 from app.crud.paths import create_path
 from app.crud.nodes import create_node
+import logging
 
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/map", tags=["map"])
 
 @router.get("/")
 def get_full_map(db: Session = Depends(get_db)):
+    logger.info('map')
 
     buildings_data = []
     buildings = db.query(Buildings).all()
@@ -57,15 +60,16 @@ def get_full_map(db: Session = Depends(get_db)):
         start_point = db.query(Points).filter(Points.id == p.start_point_id).first()
         end_point = db.query(Points).filter(Points.id == p.end_point_id).first()
 
-        paths_data.append({
-            "id": p.id,
-            "start_type": "room" if start_point.type == "room" else "node",
-            "start_ref": start_point.ref_id,
-            "end_type": "room" if end_point.type == "room" else "node",
-            "end_ref": end_point.ref_id,
-            "distance": p.distance,
-            "geometry": to_shape(p.geometry).wkt
-        })
+        if start_point and end_point:
+            paths_data.append({
+                "id": p.id,
+                "start_type": "room" if start_point.type == "room" else "node",
+                "start_ref": start_point.ref_id,
+                "end_type": "room" if end_point.type == "room" else "node",
+                "end_ref": end_point.ref_id,
+                "distance": p.distance,
+                "geometry": to_shape(p.geometry).wkt
+            })
 
     return {
         "buildings": buildings_data,
@@ -89,7 +93,7 @@ def create_map(payload: MapCreate, db: Session = Depends(get_db)):
 
     for n in payload.nodes:
         node = create_node(db, n)
-        point = create_point(db, node.id, "nav_node", node.floor)
+        point = create_point(db, node.id, "node", node.floor)
         node_name_to_point[n.name] = point.id
 
     for p in payload.paths:

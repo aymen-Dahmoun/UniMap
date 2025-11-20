@@ -17,6 +17,6 @@ class Points(Base):
     
     node = relationship(
         "NavigationNode",
-        primaryjoin="and_(foreign(Points.ref_id)==NavigationNode.id, Points.type=='nav_node')",
+        primaryjoin="and_(foreign(Points.ref_id)==NavigationNode.id, Points.type=='node')",
         viewonly=True
     )
