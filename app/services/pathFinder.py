@@ -55,7 +55,6 @@ class PathFinder:
             raise ValueError(f"Point {point_id} not found")
         logger.info(f'node : {point.__dict__}')
 
-        # Base data
         data = {
             "id": point.id,
             "type": point.type,
@@ -63,14 +62,12 @@ class PathFinder:
             "floor": point.floor,
         }
 
-        # If point is room
         if point.type == "room" and point.room:
             data.update({
                 "name": point.room.name,
                 "geometry": db.scalar(point.room.geometry.ST_AsGeoJSON())
             })
 
-        # If point is navigation node
         if point.type == "node" and point.node:
             logger.info(f'node : {point.__dict__}')
             data.update({
@@ -88,7 +85,6 @@ class PathFinder:
             start_id = self.resolve_point(db, start_ref)
             end_id = self.resolve_point(db, end_ref)
 
-            # NetworkX shortest path
             path_point_ids = nx.shortest_path(
                 self.graph,
                 source=start_id,
@@ -103,7 +99,6 @@ class PathFinder:
                 weight="weight"
             )
 
-            # Collect edge (segment) details
             path_segments = []
             for i in range(len(path_point_ids) - 1):
                 start = path_point_ids[i]
@@ -118,7 +113,6 @@ class PathFinder:
                     "floor": edge["floor"]
                 })
 
-            # Collect full point metadata
             path_points = [
                 self.get_point_details(db, pid) for pid in path_point_ids
             ]

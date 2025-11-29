@@ -1,62 +1,47 @@
-from sqlalchemy.orm import Session
+from typing import List, Union, Dict, Any
+from sqlalchemy.orm import Session, joinedload
 from app.models.rooms import Rooms
-from app.schemas.rooms import RoomsCreate, RoomsUpdate
-from app.schemas.map import RoomSchema
-from geoalchemy2.shape import from_shape
-from shapely import wkt
+from app.models.room_metadata import RoomMetadata
+from app.models.points import Points
+from app.schemas.rooms import RoomsCreate
+from app.services.to_geojson import room_to_geojson
 
-def create_room(db: Session, data: RoomsCreate):
-    db_obj = Rooms(
-        name=data.name,
-        building_id=data.building_id,
-        geometry=f"SRID=4326;{data.geometry}"
-    )
-    db.add(db_obj)
-    db.commit()
-    db.refresh(db_obj)
-    return db_obj
+def get_all_rooms(db: Session) -> List[Dict[str, Any]]:
+    rooms = db.query(Rooms).options(joinedload(Rooms.metadata)).all()
+    return [room_to_geojson(r) for r in rooms]
 
-def create_room_flush(db: Session, r: RoomSchema, building_id: int):
-    room = Rooms(
-        name=r.name,
-        floor=r.floor,
-        building_id=building_id,
-        geometry=from_shape(wkt.loads(r.geometry), srid=4326)
-    )
-    db.add(room)
-    db.flush()
-    return room
+def create_rooms(db: Session, data: Union[RoomsCreate, List[RoomsCreate]]):
+    rooms_data = data if isinstance(data, list) else [data]
+    results = []
 
-def get_rooms(db: Session):
-    return db.query(Rooms).all()
+    for room in rooms_data:
+        room_data = room.model_dump(exclude={"metadata"})
+        obj = Rooms(**room_data)
+        db.add(obj)
+        db.commit()
+        db.refresh(obj)
 
+        if room.room_metadata:
+            metadata_obj = RoomMetadata(
+                room_id=obj.id,
+                **room.room_metadata.model_dump()
+            )
+            db.add(metadata_obj)
+            db.commit()
+            db.refresh(metadata_obj)
 
-def get_room(db: Session, id: int):
-    return db.query(Rooms).filter(Rooms.id == id).first()
+        point = Points(
+            type="room",
+            ref_id=obj.id,
+            floor=obj.floor
+        )
+        db.add(point)
+        db.commit()
+        db.refresh(obj)
 
+        results.append(room_to_geojson(obj))
 
-def update_room(db: Session, id: int, data: RoomsUpdate):
-    obj = db.query(Rooms).filter(Rooms.id == id).first()
-    if not obj:
-        return None
+    return results
 
-    if data.name is not None:
-        obj.name = data.name
-    if data.building_id is not None:
-        obj.building_id = data.building_id
-    if data.geometry is not None:
-        obj.geometry = f"SRID=4326;{data.geometry}"
-
-    db.commit()
-    db.refresh(obj)
-    return obj
-
-
-def delete_room(db: Session, id: int):
-    obj = db.query(Rooms).filter(Rooms.id == id).first()
-    if not obj:
-        return None
-
-    db.delete(obj)
-    db.commit()
-    return obj
+def get_room_metadata(db: Session, room_id: int):
+    return db.query(RoomMetadata).filter(RoomMetadata.room_id == room_id).first()

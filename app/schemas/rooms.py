@@ -21,7 +21,7 @@ class RoomsResponse(RoomsBase):
     geometry: Any
     building_id: int
     floor: int
-    metadata: Optional[RoomMetadataResponse] = None
+    room_metadata: Optional[RoomMetadataResponse] = None
 
     class Config:
         from_attributes = True

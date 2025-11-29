@@ -21,7 +21,7 @@ def room_to_geojson(room: Rooms):
         "name": room.name,
         "building_id": room.building_id,
         "geometry": geo.__geo_interface__,
-        "metadata": RoomMetadataResponse.model_validate(room.metadata) if room.metadata else None
+        "room_metadata": RoomMetadataResponse.model_validate(room.room_metadata) if room.room_metadata else None
     }
 
 def path_to_geojson(path: Paths):

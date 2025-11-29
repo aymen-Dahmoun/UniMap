@@ -3,37 +3,22 @@ from sqlalchemy.orm import Session
 from typing import Union
 from app.core.database import get_db
 from app.schemas.path import PathCreate, PathResponse, NavigationResponse
-from app.models.paths import Paths
-from app.models.points import Points
-from app.services.to_geojson import path_to_geojson
 from app.services.pathFinder import PathFinder
+from app.crud import paths as crud
+
 
 router = APIRouter(prefix="/path", tags=["Path"])
 
 @router.get("/", response_model=list[PathResponse])
 def list_paths(db: Session = Depends(get_db)):
-    return db.query(Paths).all()
+    return crud.list_paths(db)
 
 @router.post("/", response_model=list[PathResponse])
 def create_paths(
     data: Union[PathCreate, list[PathCreate]],
     db: Session = Depends(get_db)
 ):
-    paths_data = data if isinstance(data, list) else [data]
-
-    created = []
-
-    for item in paths_data:
-        obj = Paths(**item.model_dump())
-        db.add(obj)
-        created.append(obj)
-
-    db.commit()
-
-    for obj in created:
-        db.refresh(obj)
-
-    return [path_to_geojson(obj) for obj in created]
+    return crud.create_paths(data, db)
 
 @router.get("/shortest", response_model=NavigationResponse)
 def get_shortest_path(
