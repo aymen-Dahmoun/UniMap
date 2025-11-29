@@ -5,6 +5,9 @@ from app.models.room_metadata import RoomMetadata
 from app.models.points import Points
 from app.schemas.rooms import RoomsCreate
 from app.services.to_geojson import room_to_geojson
+from geoalchemy2.shape import from_shape
+from shapely import wkt
+from app.schemas.map import RoomSchema
 
 def get_all_rooms(db: Session) -> List[Dict[str, Any]]:
     rooms = db.query(Rooms).options(joinedload(Rooms.metadata)).all()
@@ -42,6 +45,16 @@ def create_rooms(db: Session, data: Union[RoomsCreate, List[RoomsCreate]]):
         results.append(room_to_geojson(obj))
 
     return results
+def create_room_flush(db: Session, b: RoomSchema, building_id: int):
+    rooms = Rooms(
+        name=b.name,
+        floor=b.floor,
+        building_id=building_id,
+        geometry=from_shape(wkt.loads(b.geometry), srid=4326)
+    )
+    db.add(rooms)
+    db.flush()
+    return rooms
 
 def get_room_metadata(db: Session, room_id: int):
     return db.query(RoomMetadata).filter(RoomMetadata.room_id == room_id).first()
