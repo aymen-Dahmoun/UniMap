@@ -1,0 +1,96 @@
+{
+  "buildings": [
+    {
+      "name": "Grand City Hospital - Main Building",
+      "floor": 0,
+      "geometry": "POLYGON((0 0, 0 120, 200 120, 200 0, 0 0))",
+      "rooms": [
+        { "name": "Emergency Room 1", "floor": 0, "geometry": "POINT(20 100)" },
+        { "name": "Emergency Room 2", "floor": 0, "geometry": "POINT(35 100)" },
+        { "name": "Radiology Lab", "floor": 0, "geometry": "POINT(60 105)" },
+        { "name": "MRI Unit", "floor": 0, "geometry": "POINT(80 105)" },
+        { "name": "CT Scan Room", "floor": 0, "geometry": "POINT(100 105)" },
+        { "name": "Main Lobby", "floor": 0, "geometry": "POINT(100 60)" },
+        { "name": "Reception", "floor": 0, "geometry": "POINT(110 60)" },
+        { "name": "Family Waiting Area", "floor": 0, "geometry": "POINT(90 60)" },
+        { "name": "Pharmacy", "floor": 0, "geometry": "POINT(40 40)" },
+        { "name": "Cafeteria", "floor": 0, "geometry": "POINT(150 30)" },
+        { "name": "Kitchen", "floor": 0, "geometry": "POINT(160 20)" },
+        { "name": "ICU Ward", "floor": 0, "geometry": "POINT(180 100)" },
+        { "name": "Pediatrics Clinic", "floor": 0, "geometry": "POINT(180 80)" },
+        { "name": "Surgery Prep Room", "floor": 0, "geometry": "POINT(150 110)" },
+        { "name": "Operating Theater 1", "floor": 0, "geometry": "POINT(160 110)" },
+        { "name": "Operating Theater 2", "floor": 0, "geometry": "POINT(170 110)" },
+        { "name": "Staff Room", "floor": 0, "geometry": "POINT(40 20)" },
+        { "name": "Supply Room", "floor": 0, "geometry": "POINT(20 20)" }
+      ]
+    }
+  ],
+
+  "nodes": [
+    { "name": "North Entrance", "floor": 0, "node_type": "entrance", "geometry": "POINT(100 120)" },
+    { "name": "South Entrance", "floor": 0, "node_type": "entrance", "geometry": "POINT(100 0)" },
+    { "name": "East Entrance", "floor": 0, "node_type": "entrance", "geometry": "POINT(200 60)" },
+    { "name": "West Entrance", "floor": 0, "node_type": "entrance", "geometry": "POINT(0 60)" },
+
+    { "name": "Hallway North Center", "floor": 0, "node_type": "hallway", "geometry": "POINT(100 100)" },
+    { "name": "Hallway North West", "floor": 0, "node_type": "hallway", "geometry": "POINT(40 100)" },
+    { "name": "Hallway North East", "floor": 0, "node_type": "hallway", "geometry": "POINT(160 100)" },
+
+    { "name": "Hallway Central", "floor": 0, "node_type": "hallway", "geometry": "POINT(100 60)" },
+    { "name": "Hallway West", "floor": 0, "node_type": "hallway", "geometry": "POINT(40 60)" },
+    { "name": "Hallway East", "floor": 0, "node_type": "hallway", "geometry": "POINT(160 60)" },
+
+    { "name": "Hallway South Center", "floor": 0, "node_type": "hallway", "geometry": "POINT(100 20)" },
+    { "name": "Hallway South West", "floor": 0, "node_type": "hallway", "geometry": "POINT(40 20)" },
+    { "name": "Hallway South East", "floor": 0, "node_type": "hallway", "geometry": "POINT(160 20)" },
+
+    { "name": "Elevator A", "floor": 0, "node_type": "elevator", "geometry": "POINT(120 60)" },
+    { "name": "Stairwell A", "floor": 0, "node_type": "stair", "geometry": "POINT(80 60)" }
+  ],
+
+  "paths": [
+    { "start_type": "node", "start_ref": "North Entrance", "end_type": "node", "end_ref": "Hallway North Center", "distance": 20, "geometry": "LINESTRING(100 120, 100 100)" },
+    { "start_type": "node", "start_ref": "South Entrance", "end_type": "node", "end_ref": "Hallway South Center", "distance": 20, "geometry": "LINESTRING(100 0, 100 20)" },
+    { "start_type": "node", "start_ref": "East Entrance", "end_type": "node", "end_ref": "Hallway East", "distance": 40, "geometry": "LINESTRING(200 60, 160 60)" },
+    { "start_type": "node", "start_ref": "West Entrance", "end_type": "node", "end_ref": "Hallway West", "distance": 40, "geometry": "LINESTRING(0 60, 40 60)" },
+
+    { "start_type": "node", "start_ref": "Hallway North Center", "end_type": "node", "end_ref": "Hallway Central", "distance": 40, "geometry": "LINESTRING(100 100, 100 60)" },
+    { "start_type": "node", "start_ref": "Hallway North West", "end_type": "node", "end_ref": "Hallway North Center", "distance": 60, "geometry": "LINESTRING(40 100, 100 100)" },
+    { "start_type": "node", "start_ref": "Hallway North East", "end_type": "node", "end_ref": "Hallway North Center", "distance": 60, "geometry": "LINESTRING(160 100, 100 100)" },
+
+    { "start_type": "node", "start_ref": "Hallway West", "end_type": "node", "end_ref": "Hallway Central", "distance": 60, "geometry": "LINESTRING(40 60, 100 60)" },
+    { "start_type": "node", "start_ref": "Hallway East", "end_type": "node", "end_ref": "Hallway Central", "distance": 60, "geometry": "LINESTRING(160 60, 100 60)" },
+
+    { "start_type": "node", "start_ref": "Hallway South Center", "end_type": "node", "end_ref": "Hallway Central", "distance": 40, "geometry": "LINESTRING(100 20, 100 60)" },
+    { "start_type": "node", "start_ref": "Hallway South West", "end_type": "node", "end_ref": "Hallway South Center", "distance": 60, "geometry": "LINESTRING(40 20, 100 20)" },
+    { "start_type": "node", "start_ref": "Hallway South East", "end_type": "node", "end_ref": "Hallway South Center", "distance": 60, "geometry": "LINESTRING(160 20, 100 20)" },
+
+    { "start_type": "node", "start_ref": "Hallway North West", "end_type": "room", "end_ref": "Emergency Room 1", "distance": 20, "geometry": "LINESTRING(40 100, 20 100)" },
+    { "start_type": "node", "start_ref": "Hallway North West", "end_type": "room", "end_ref": "Emergency Room 2", "distance": 5, "geometry": "LINESTRING(40 100, 35 100)" },
+    { "start_type": "node", "start_ref": "Hallway North Center", "end_type": "room", "end_ref": "Radiology Lab", "distance": 20, "geometry": "LINESTRING(100 100, 60 105)" },
+    { "start_type": "node", "start_ref": "Hallway North Center", "end_type": "room", "end_ref": "MRI Unit", "distance": 20, "geometry": "LINESTRING(100 100, 80 105)" },
+    { "start_type": "node", "start_ref": "Hallway North Center", "end_type": "room", "end_ref": "CT Scan Room", "distance": 20, "geometry": "LINESTRING(100 100, 100 105)" },
+
+    { "start_type": "node", "start_ref": "Hallway Central", "end_type": "room", "end_ref": "Main Lobby", "distance": 0, "geometry": "LINESTRING(100 60, 100 60)" },
+    { "start_type": "node", "start_ref": "Hallway Central", "end_type": "room", "end_ref": "Reception", "distance": 10, "geometry": "LINESTRING(100 60, 110 60)" },
+    { "start_type": "node", "start_ref": "Hallway Central", "end_type": "room", "end_ref": "Family Waiting Area", "distance": 10, "geometry": "LINESTRING(100 60, 90 60)" },
+
+    { "start_type": "node", "start_ref": "Hallway South West", "end_type": "room", "end_ref": "Pharmacy", "distance": 20, "geometry": "LINESTRING(40 20, 40 40)" },
+    { "start_type": "node", "start_ref": "Hallway South East", "end_type": "room", "end_ref": "Cafeteria", "distance": 40, "geometry": "LINESTRING(160 20, 150 30)" },
+    { "start_type": "node", "start_ref": "Hallway South East", "end_type": "room", "end_ref": "Kitchen", "distance": 20, "geometry": "LINESTRING(160 20, 160 20)" },
+
+    { "start_type": "node", "start_ref": "Hallway North East", "end_type": "room", "end_ref": "ICU Ward", "distance": 20, "geometry": "LINESTRING(160 100, 180 100)" },
+    { "start_type": "node", "start_ref": "Hallway North East", "end_type": "room", "end_ref": "Pediatrics Clinic", "distance": 20, "geometry": "LINESTRING(160 100, 180 80)" },
+
+    { "start_type": "node", "start_ref": "Hallway North East", "end_type": "room", "end_ref": "Surgery Prep Room", "distance": 10, "geometry": "LINESTRING(160 100, 150 110)" },
+    { "start_type": "node", "start_ref": "Hallway North East", "end_type": "room", "end_ref": "Operating Theater 1", "distance": 10, "geometry": "LINESTRING(160 100, 160 110)" },
+    { "start_type": "node", "start_ref": "Hallway North East", "end_type": "room", "end_ref": "Operating Theater 2", "distance": 10, "geometry": "LINESTRING(160 100, 170 110)" },
+
+    { "start_type": "node", "start_ref": "Hallway South West", "end_type": "room", "end_ref": "Staff Room", "distance": 0, "geometry": "LINESTRING(40 20, 40 20)" },
+    { "start_type": "node", "start_ref": "Hallway South West", "end_type": "room", "end_ref": "Supply Room", "distance": 20, "geometry": "LINESTRING(40 20, 20 20)" },
+
+    { "start_type": "node", "start_ref": "Hallway Central", "end_type": "node", "end_ref": "Elevator A", "distance": 20, "geometry": "LINESTRING(100 60, 120 60)" },
+    { "start_type": "node", "start_ref": "Hallway Central", "end_type": "node", "end_ref": "Stairwell A", "distance": 20, "geometry": "LINESTRING(100 60, 80 60)" }
+  ]
+}
