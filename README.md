@@ -4,7 +4,7 @@ UniMap is a FastAPI-based backend for managing indoor maps, buildings, rooms, pa
 
 ---
 
-## Features ![icon](https://cdn.simpleicons.org/azurepipelines)
+## Features
 
 *  Manage buildings and their rooms
 *  Store and fetch room metadata
@@ -15,7 +15,7 @@ UniMap is a FastAPI-based backend for managing indoor maps, buildings, rooms, pa
 
 ---
 
-## Tech Stack ![icon](https://cdn.simpleicons.org/grpc)
+## Tech Stack
 
 *  **FastAPI**
 *  **Python**
@@ -27,7 +27,7 @@ UniMap is a FastAPI-based backend for managing indoor maps, buildings, rooms, pa
 
 ---
 
-## Configuration ![icon](https://cdn.simpleicons.org/settings)
+## Configuration
 
 UniMap uses Pydantic Settings for environment configuration.
 
@@ -54,7 +54,7 @@ DATABASE_URL=postgresql://user:password@localhost/dbname
 
 ---
 
-## Project Structure ![icon](https://cdn.simpleicons.org/folder)
+## Project Structure
 
 ```
 app/
@@ -69,7 +69,7 @@ app/
 
 ---
 
-## API Endpoints ![icon](https://cdn.simpleicons.org/apachenetbeanside)
+## API Endpoints
 
 ### Buildings
 
@@ -126,7 +126,7 @@ app/
 
 ---
 
-## Running the Application ![icon](https://cdn.simpleicons.org/fastapi)
+## Running the Application
 
 ### Install dependencies
 
@@ -147,7 +147,7 @@ uvicorn app.main:app --reload
 
 ---
 
-## Database Setup ![icon](https://cdn.simpleicons.org/postgresql)
+## Database Setup
 
 Ensure PostgreSQL is running.
 
@@ -163,7 +163,7 @@ alembic upgrade head
 
 ---
 
-## License ![icon](https://cdn.simpleicons.org/opensourceinitiative)
+## License
 
 MIT License
 
