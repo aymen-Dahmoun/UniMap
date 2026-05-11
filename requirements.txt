@@ -8,4 +8,6 @@ passlib[bcrypt]
 pydantic[email]
 
 psycopg2-binary
-
+geoalchemy2
+shapely
+networkx

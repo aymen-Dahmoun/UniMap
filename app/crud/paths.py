@@ -10,7 +10,8 @@ from app.models.paths import Paths
 from app.services.to_geojson import path_to_geojson
 
 def list_paths(db: Session):
-    return db.query(Paths).all()
+    paths = db.query(Paths).all()
+    return [path_to_geojson(p) for p in paths]
 
 def create_path(db: Session, start_id: int, end_id: int, p: PathMap):
     path = Paths(
@@ -34,7 +35,12 @@ def create_paths(
     created = []
 
     for item in paths_data:
-        obj = Paths(**item.model_dump())
+        payload = item.model_dump()
+        geometry_wkt = payload.pop("geometry")
+        if geometry_wkt.upper().startswith("SRID="):
+            geometry_wkt = geometry_wkt.split(";", 1)[1]
+        payload["geometry"] = from_shape(wkt.loads(geometry_wkt), srid=4326)
+        obj = Paths(**payload)
         db.add(obj)
         created.append(obj)
 

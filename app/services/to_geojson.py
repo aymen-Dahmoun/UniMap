@@ -11,6 +11,7 @@ def building_to_geojson(building: Buildings):
     return {
         "id": building.id,
         "name": building.name,
+        "floor": building.floor,
         "geometry": geo.__geo_interface__
     }
 
@@ -20,6 +21,7 @@ def room_to_geojson(room: Rooms):
         "id": room.id,
         "name": room.name,
         "building_id": room.building_id,
+        "floor": room.floor,
         "geometry": geo.__geo_interface__,
         "room_metadata": RoomMetadataResponse.model_validate(room.room_metadata) if room.room_metadata else None
     }
@@ -28,8 +30,8 @@ def path_to_geojson(path: Paths):
     geo = to_shape(path.geometry)
     return {
         "id": path.id,
-        "start_room_id": path.start_room_id,
-        "end_room_id": path.end_room_id,
+        "start_point_id": path.start_point_id,
+        "end_point_id": path.end_point_id,
         "geometry": geo.__geo_interface__,
         "distance": path.distance
     }

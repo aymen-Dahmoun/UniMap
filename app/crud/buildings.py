@@ -40,7 +40,8 @@ def get_buildings(db: Session):
     return [building_to_geojson(b) for b in buildings]
 
 def get_building_by_id (db: Session, id: int):
-    return db.query(Buildings).filter(Buildings.id == id).first()
+    obj = db.query(Buildings).filter(Buildings.id == id).first()
+    return building_to_geojson(obj) if obj else None
 
 
 def update_building(db: Session, id: int, data: BuildingsUpdate):

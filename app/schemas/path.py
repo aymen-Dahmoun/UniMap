@@ -1,23 +1,23 @@
 from pydantic import BaseModel
 from typing import List, Optional, Any
-from app.schemas.points import PointsBase
 
 class PathBase(BaseModel):
-    start_point_id: Any
-    end_point_id: Any
+    start_point_id: int
+    end_point_id: int
     distance: float
-    geometry: str
+    geometry: Any
 
 class PathCreate(BaseModel):
-    start_point_id: PointsBase
-    end_point_id: PointsBase
+    start_point_id: int
+    end_point_id: int
     distance: float
+    geometry: str
     floor: Optional[int]
 
 class PathResponse(PathBase):
     id: int
-    start_point_id: Any
-    end_point_id: Any
+    start_point_id: int
+    end_point_id: int
     distance: float
     geometry: Any
 

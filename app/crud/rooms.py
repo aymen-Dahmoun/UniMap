@@ -10,7 +10,7 @@ from shapely import wkt
 from app.schemas.map import RoomSchema
 
 def get_all_rooms(db: Session) -> List[Dict[str, Any]]:
-    rooms = db.query(Rooms).options(joinedload(Rooms.metadata)).all()
+    rooms = db.query(Rooms).options(joinedload(Rooms.room_metadata)).all()
     return [room_to_geojson(r) for r in rooms]
 
 def create_rooms(db: Session, data: Union[RoomsCreate, List[RoomsCreate]]):

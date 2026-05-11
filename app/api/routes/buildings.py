@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List, Union
 from app.core.database import get_db
@@ -13,9 +13,12 @@ router = APIRouter(prefix="/buildings", tags=["Buildings"])
 def list_buildingss(db: Session = Depends(get_db)):
     return get_buildings(db)
 
-@router.get("/", response_model=List[BuildingsResponse])
+@router.get("/{id}", response_model=BuildingsResponse)
 def get_building(id: int, db: Session = Depends(get_db)):
-    return get_building_by_id(db, id)
+    obj = get_building_by_id(db, id)
+    if not obj:
+        raise HTTPException(status_code=404, detail="Building not found")
+    return obj
 
 
 @router.post("/", response_model=BuildingsResponse)

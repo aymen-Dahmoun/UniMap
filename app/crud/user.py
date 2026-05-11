@@ -4,7 +4,7 @@ from app.schemas.user import UserCreate
 from passlib.hash import bcrypt
 
 def create_user(db: Session, user: UserCreate):
-    hashed = user.password # bcrypt.hash(user.password)
+    hashed = bcrypt.hash(user.password)
     db_user = User(email=user.email, hashed_password=hashed)
     db.add(db_user)
     db.commit()
