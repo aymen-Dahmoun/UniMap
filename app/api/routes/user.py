@@ -6,7 +6,7 @@ from app.crud.user import create_user, get_users
 from app.core.database import get_db
 
 
-router = APIRouter()
+router = APIRouter(prefix="/users", tags=["Users"])
 
 
 @router.post("/", response_model=UserResponse)
