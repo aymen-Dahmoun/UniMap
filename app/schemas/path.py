@@ -25,6 +25,7 @@ class NavigationResponse(BaseModel):
     success: bool
     total_distance: float
     path_points: Optional[List[Any]] = None
+    path_segments: Optional[List[Any]] = None
     path_room_ids: Optional[List[int]] = None
     
     class Config:

@@ -33,7 +33,8 @@ def path_to_geojson(path: Paths):
         "start_point_id": path.start_point_id,
         "end_point_id": path.end_point_id,
         "geometry": geo.__geo_interface__,
-        "distance": path.distance
+        "distance": path.distance,
+        "floor": path.floor
     }
 
 def node_to_geojson(node: NavigationNode):
@@ -42,5 +43,6 @@ def node_to_geojson(node: NavigationNode):
         "id": node.id,
         "node_type": node.node_type,
         "geometry": geo.__geo_interface__,
-        "is_accessible": node.is_accessible
+        "is_accessible": node.is_accessible,
+        "floor": node.floor
     }
