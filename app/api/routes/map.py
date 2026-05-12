@@ -16,7 +16,7 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-router = APIRouter(prefix="/map", tags=["map"])
+router = APIRouter(prefix="/maps", tags=["Map"])
 
 @router.get("/")
 def get_full_map(db: Session = Depends(get_db)):
@@ -77,7 +77,7 @@ def get_full_map(db: Session = Depends(get_db)):
         "paths": paths_data
     }
 
-@router.post("/maps")
+@router.post("/")
 def create_map(payload: MapCreate, db: Session = Depends(get_db)):
 
     room_name_to_point = {}

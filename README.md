@@ -110,14 +110,6 @@ app/
 
 ---
 
-### Testing Utilities
-
-| Method | Endpoint                       | Description                         |
-| ------ | ------------------------------ | ----------------------------------- |
-| POST   | `/api/test/seed_two_buildings` | Insert two test buildings with data |
-
----
-
 ### Default
 
 | Method | Endpoint  | Description  |
