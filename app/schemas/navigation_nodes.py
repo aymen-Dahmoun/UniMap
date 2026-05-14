@@ -1,10 +1,27 @@
 from pydantic import BaseModel
-from typing import Any
+from typing import Any, Literal
+
+NodeType = Literal[
+    "normal",
+    "stairs",
+    "elevator",
+    "entrance",
+    "exit",
+    "emergency_exit",
+    "restroom",
+    "accessible",
+    "public_chair",
+    "info",
+    "desk",
+    "tree",
+    "bench",
+]
 
 
 class NavigationNodeBase(BaseModel):
+    name: str
     floor: int
-    node_type: str = "normal"
+    node_type: NodeType = "normal"
     is_accessible: bool = True
 
 

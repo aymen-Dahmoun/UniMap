@@ -41,6 +41,7 @@ def node_to_geojson(node: NavigationNode):
     geo = to_shape(node.geometry)
     return {
         "id": node.id,
+        "name": node.name,
         "node_type": node.node_type,
         "geometry": geo.__geo_interface__,
         "is_accessible": node.is_accessible,
