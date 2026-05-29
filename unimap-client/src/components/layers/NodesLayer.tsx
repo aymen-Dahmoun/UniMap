@@ -14,9 +14,9 @@ export function NodesLayer({ nodes, selectedId, onSelect }: NodesLayerProps) {
         const isSelected = String(n.properties.id) === selectedId;
         return (
           <Shape
-            key={n.properties.id}
+            key={String(n.properties.id)}
             feature={n}
-            r={isSelected ? 0.00007 : 0.00005} // Relative size if using geographic coords, might need scaling
+            r={isSelected ? 0.00007 : 0.00005}
             fill={isSelected ? "#ea580c" : "#f97316"}
             fillOpacity={isSelected ? 1 : 0.9}
             stroke={isSelected ? "#ea580c" : "#f97316"}

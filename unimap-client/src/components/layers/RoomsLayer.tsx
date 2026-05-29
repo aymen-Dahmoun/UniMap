@@ -14,7 +14,7 @@ export function RoomsLayer({ rooms, selectedId, onSelect }: RoomsLayerProps) {
         const isSelected = String(r.properties.id) === selectedId;
         return (
           <Shape
-            key={r.properties.id}
+            key={String(r.properties.id)}
             feature={r}
             fill={isSelected ? "#059669" : "#10b981"}
             fillOpacity={isSelected ? 0.55 : 0.35}

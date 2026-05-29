@@ -10,7 +10,7 @@ export function BuildingsLayer({ buildings }: BuildingsLayerProps) {
     <g className="layer-buildings">
       {buildings.map((b) => (
         <Shape
-          key={b.properties.id}
+          key={String(b.properties.id)}
           feature={b}
           fill="#0ea5e9"
           fillOpacity={0.35}

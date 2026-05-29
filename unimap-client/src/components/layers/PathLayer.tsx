@@ -3,9 +3,11 @@ import type { MapFeature } from '../../models/types';
 
 interface PathLayerProps {
   pathSegments: MapFeature[];
+  stroke?: string;
+  strokeWidth?: number;
 }
 
-export function PathLayer({ pathSegments }: PathLayerProps) {
+export function PathLayer({ pathSegments, stroke = "#ef4444", strokeWidth = 4 }: PathLayerProps) {
   if (!pathSegments || pathSegments.length === 0) return null;
 
   return (
@@ -15,8 +17,8 @@ export function PathLayer({ pathSegments }: PathLayerProps) {
           key={i}
           feature={segment}
           fill="none"
-          stroke="#ef4444"
-          strokeWidth={4}
+          stroke={stroke}
+          strokeWidth={strokeWidth}
           strokeLinecap="round"
           strokeLinejoin="round"
           style={{ vectorEffect: 'non-scaling-stroke' }}
