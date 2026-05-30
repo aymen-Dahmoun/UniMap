@@ -1,8 +1,9 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.api.router import api_router
-from app.models import user, user_pins, buildings, rooms, paths
+from app.models import user, user_pins, buildings, rooms, paths, maps, nodes, landmarks
 import logging
+from app.core.database import Base, engine
 
 logging.basicConfig(
     level=logging.INFO,
@@ -10,7 +11,6 @@ logging.basicConfig(
 )
 
 # Base.metadata.drop_all(bind=engine)
-
 app = FastAPI(title="UniMap")
 
 app.add_middleware(
@@ -22,6 +22,11 @@ app.add_middleware(
 )
 
 app.include_router(api_router)
+
+
+@app.on_event("startup")
+def create_tables() -> None:
+    Base.metadata.create_all(bind=engine)
 
 
 @app.get("/health")

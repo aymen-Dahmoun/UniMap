@@ -25,11 +25,12 @@ def create_buildings(data: Union[BuildingsCreate, List[BuildingsCreate]], db: Se
         result.append(building_to_geojson(obj))
     return result
 
-def create_building_flush(db: Session, b: BuildingSchema):
+def create_building_flush(db: Session, b: BuildingSchema, map_id: int | None = None):
     building = Buildings(
         name=b.name,
         floor=b.floor,
-        geometry=from_shape(wkt.loads(b.geometry), srid=4326)
+        geometry=from_shape(wkt.loads(b.geometry), srid=4326),
+        map_id=map_id
     )
     db.add(building)
     db.flush()

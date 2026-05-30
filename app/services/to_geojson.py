@@ -2,7 +2,7 @@ from geoalchemy2.shape import to_shape
 from app.models.buildings import Buildings
 from app.models.rooms import Rooms
 from app.models.paths import Paths
-from app.models.navigation_nodes import NavigationNode
+from app.models.nodes import Nodes
 from app.schemas.room_metadata import RoomMetadataResponse
 
 
@@ -30,18 +30,19 @@ def path_to_geojson(path: Paths):
     geo = to_shape(path.geometry)
     return {
         "id": path.id,
-        "start_point_id": path.start_point_id,
-        "end_point_id": path.end_point_id,
+        "start_node_id": path.start_node_id,
+        "end_node_id": path.end_node_id,
         "geometry": geo.__geo_interface__,
         "distance": path.distance,
         "floor": path.floor
     }
 
-def node_to_geojson(node: NavigationNode):
-    geo = to_shape(node.geometry)
+def node_to_geojson(node: Nodes):
+    geo = to_shape(node.node_geometry)
     return {
         "id": node.id,
         "name": node.name,
+        "node_kind": node.node_kind,
         "node_type": node.node_type,
         "geometry": geo.__geo_interface__,
         "is_accessible": node.is_accessible,

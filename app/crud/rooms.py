@@ -2,7 +2,6 @@ from typing import List, Union, Dict, Any
 from sqlalchemy.orm import Session, joinedload
 from app.models.rooms import Rooms
 from app.models.room_metadata import RoomMetadata
-from app.models.points import Points
 from app.schemas.rooms import RoomsCreate
 from app.services.to_geojson import room_to_geojson
 from geoalchemy2.shape import from_shape
@@ -19,7 +18,12 @@ def create_rooms(db: Session, data: Union[RoomsCreate, List[RoomsCreate]]):
 
     for room in rooms_data:
         room_data = room.model_dump(exclude={"metadata"})
-        obj = Rooms(**room_data)
+        geometry = wkt.loads(room_data.pop("geometry"))
+        obj = Rooms(
+            **room_data,
+            geometry=from_shape(geometry, srid=4326),
+            node_geometry=from_shape(geometry.centroid, srid=4326)
+        )
         db.add(obj)
         db.commit()
         db.refresh(obj)
@@ -33,24 +37,17 @@ def create_rooms(db: Session, data: Union[RoomsCreate, List[RoomsCreate]]):
             db.commit()
             db.refresh(metadata_obj)
 
-        point = Points(
-            type="room",
-            ref_id=obj.id,
-            floor=obj.floor
-        )
-        db.add(point)
-        db.commit()
-        db.refresh(obj)
-
         results.append(room_to_geojson(obj))
 
     return results
 def create_room_flush(db: Session, b: RoomSchema, building_id: int):
+    geometry = wkt.loads(b.geometry)
     rooms = Rooms(
         name=b.name,
         floor=b.floor,
         building_id=building_id,
-        geometry=from_shape(wkt.loads(b.geometry), srid=4326)
+        geometry=from_shape(geometry, srid=4326),
+        node_geometry=from_shape(geometry.centroid, srid=4326)
     )
     db.add(rooms)
     db.flush()

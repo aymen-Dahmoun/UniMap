@@ -2,23 +2,23 @@ from pydantic import BaseModel
 from typing import List, Optional, Any
 
 class PathBase(BaseModel):
-    start_point_id: int
-    end_point_id: int
+    start_node_id: int
+    end_node_id: int
     distance: float
     geometry: Any
     floor: int
 
 class PathCreate(BaseModel):
-    start_point_id: int
-    end_point_id: int
+    start_node_id: int
+    end_node_id: int
     distance: float
     geometry: str
     floor: int
 
 class PathResponse(PathBase):
     id: int
-    start_point_id: int
-    end_point_id: int
+    start_node_id: int
+    end_node_id: int
     distance: float
     geometry: Any
     floor: int

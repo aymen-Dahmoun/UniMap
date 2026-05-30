@@ -1,26 +1,25 @@
 from sqlalchemy.orm import Session
 from shapely import wkt
 from geoalchemy2.shape import from_shape
-from app.models.navigation_nodes import NavigationNode
+from app.models.nodes import Nodes
 from app.schemas.map import NodeMap
 from typing import List, Union
 from app.schemas.navigation_nodes import NavigationNodeCreate
-from app.models.navigation_nodes import NavigationNode
 from app.services.to_geojson import node_to_geojson
-from app.models.points import Points
 
 
 def get_all_nodes(db: Session):
-    nodes = db.query(NavigationNode).all()
+    nodes = db.query(Nodes).all()
     return [node_to_geojson(n) for n in nodes]
 
 
 def create_node(db: Session, n: NodeMap):
-    node = NavigationNode(
+    geometry = wkt.loads(n.geometry)
+    node = Nodes(
         name=n.name,
         node_type=n.node_type,
         floor=n.floor,
-        geometry=from_shape(wkt.loads(n.geometry), srid=4326)
+        node_geometry=from_shape(geometry, srid=4326)
     )
     db.add(node)
     db.flush()
@@ -34,19 +33,13 @@ def create_nodes(
     results = []
 
     for node in nodes_data:
-        obj = NavigationNode(**node.model_dump())
+        payload = node.model_dump()
+        geometry = wkt.loads(payload.pop("geometry"))
+        payload["node_geometry"] = from_shape(geometry, srid=4326)
+        obj = Nodes(**payload)
         db.add(obj)
         db.commit()
         db.refresh(obj)
-
-        point = Points(
-            type="node",
-            ref_id=obj.id,
-            floor=obj.floor
-        )
-        db.add(point)
-        db.commit()
-        db.refresh(point)
 
         results.append(node_to_geojson(obj))
 

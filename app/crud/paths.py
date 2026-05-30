@@ -2,6 +2,7 @@ from sqlalchemy.orm import Session
 from shapely import wkt
 from geoalchemy2.shape import from_shape
 from app.models.paths import Paths
+from app.models.nodes import Nodes
 from app.schemas.map import PathMap
 from sqlalchemy.orm import Session
 from typing import Union
@@ -14,12 +15,17 @@ def list_paths(db: Session):
     return [path_to_geojson(p) for p in paths]
 
 def create_path(db: Session, start_id: int, end_id: int, p: PathMap):
+    start_node = db.query(Nodes).filter(Nodes.id == start_id).first()
+    if not start_node:
+        raise ValueError(f"Start node {start_id} not found")
+    building_id = start_node.building_id
     path = Paths(
-        start_point_id=start_id,
-        end_point_id=end_id,
+        start_node_id=start_id,
+        end_node_id=end_id,
         distance=p.distance,
         floor=p.floor,
-        geometry=from_shape(wkt.loads(p.geometry), srid=4326)
+        geometry=from_shape(wkt.loads(p.geometry), srid=4326),
+        building_id=building_id
     )
     db.add(path)
     db.flush()
@@ -40,6 +46,11 @@ def create_paths(
         if geometry_wkt.upper().startswith("SRID="):
             geometry_wkt = geometry_wkt.split(";", 1)[1]
         payload["geometry"] = from_shape(wkt.loads(geometry_wkt), srid=4326)
+
+        start_node = db.query(Nodes).filter(Nodes.id == payload["start_node_id"]).first()
+        if not start_node:
+            raise ValueError(f"Start node {payload['start_node_id']} not found")
+        payload["building_id"] = start_node.building_id
         obj = Paths(**payload)
         db.add(obj)
         created.append(obj)

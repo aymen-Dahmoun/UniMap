@@ -8,11 +8,21 @@ class Paths(Base):
     __tablename__ = "paths"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    start_point_id: Mapped[int] = mapped_column(ForeignKey("points.id"))
-    end_point_id: Mapped[int] = mapped_column(ForeignKey("points.id"))
+    start_node_id: Mapped[int] = mapped_column(ForeignKey("nodes.id", ondelete="CASCADE"))
+    end_node_id: Mapped[int] = mapped_column(ForeignKey("nodes.id", ondelete="CASCADE"))
     distance: Mapped[float] = mapped_column(Float)
     geometry: Mapped[WKBElement] = mapped_column(Geometry("LINESTRING", srid=4326))
     floor: Mapped[int] = mapped_column(default=1)
-    
-    start_room: Mapped["Points"] = relationship("Points", foreign_keys=[start_point_id])
-    end_room: Mapped["Points"] = relationship("Points", foreign_keys=[end_point_id])
+    building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id", ondelete="CASCADE"))
+    building = relationship("Buildings", back_populates="paths")
+
+    start_node = relationship(
+        "Nodes",
+        foreign_keys=[start_node_id],
+        back_populates="start_paths"
+    )
+    end_node = relationship(
+        "Nodes",
+        foreign_keys=[end_node_id],
+        back_populates="end_paths"
+    )

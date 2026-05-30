@@ -2,7 +2,8 @@ import networkx as nx
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
 from app.models.paths import Paths
-from app.models.points import Points
+from app.models.nodes import Nodes
+from app.models.rooms import Rooms
 import logging
 
 logger = logging.getLogger(__name__)
@@ -15,20 +16,20 @@ class PathFinder:
     def build_graph_from_db(self, db: Session):
         self.graph.clear()
 
-        points = db.query(Points).all()
-        for point in points:
+        nodes = db.query(Nodes).all()
+        for node in nodes:
             self.graph.add_node(
-                point.id,
-                type=point.type,
-                ref_id=point.ref_id,
-                floor=point.floor,
+                node.id,
+                node_kind=node.node_kind,
+                floor=node.floor,
+                building_id=node.building_id,
             )
 
         paths = db.query(Paths).all()
         for path in paths:
             self.graph.add_edge(
-                path.start_point_id,
-                path.end_point_id,
+                path.start_node_id,
+                path.end_node_id,
                 weight=path.distance,
                 path_id=path.id,
                 geometry=path.geometry,
@@ -37,44 +38,40 @@ class PathFinder:
 
         return len(paths)
 
-    def resolve_point(self, db: Session, ref: Dict[str, Any]) -> int:
-        point = db.query(Points).filter_by(
-            type=ref["type"],
-            ref_id=ref["ref_id"]
-        ).first()
+    def resolve_node(self, db: Session, ref: Dict[str, Any]) -> int:
+        node = db.query(Nodes).filter(Nodes.id == ref["ref_id"]).first()
 
-        if not point:
-            raise ValueError(f"No point found for {ref}")
+        if not node:
+            raise ValueError(f"No node found for {ref}")
 
-        return point.id
+        if ref.get("type") and node.node_kind != ref["type"]:
+            raise ValueError(f"Node type mismatch: expected {ref['type']}, got {node.node_kind}")
+
+        return node.id
 
 
-    def get_point_details(self, db: Session, point_id: int) -> Dict[str, Any]:
-        point = db.query(Points).filter_by(id=point_id).first()
-        if not point:
-            raise ValueError(f"Point {point_id} not found")
-        logger.info(f'node : {point.__dict__}')
+    def get_node_details(self, db: Session, node_id: int) -> Dict[str, Any]:
+        node = db.query(Nodes).filter_by(id=node_id).first()
+        if not node:
+            raise ValueError(f"Node {node_id} not found")
 
         data = {
-            "id": point.id,
-            "type": point.type,
-            "ref_id": point.ref_id,
-            "floor": point.floor,
+            "id": node.id,
+            "type": node.node_kind,
+            "floor": node.floor,
         }
 
-        if point.type == "room" and point.room:
+        if isinstance(node, Rooms):
             data.update({
-                "name": point.room.name,
-                "geometry": db.scalar(point.room.geometry.ST_AsGeoJSON())
+                "name": node.name,
+                "geometry": db.scalar(node.geometry.ST_AsGeoJSON())
             })
-
-        if point.type == "node" and point.node:
-            logger.info(f'node : {point.__dict__}')
+        else:
             data.update({
-                "name": point.node.name,
-                "geometry": db.scalar(point.node.geometry.ST_AsGeoJSON()),
-                "node_type": point.node.node_type,
-                "is_accessible": point.node.is_accessible
+                "name": node.name,
+                "geometry": db.scalar(node.node_geometry.ST_AsGeoJSON()),
+                "node_type": node.node_type,
+                "is_accessible": node.is_accessible
             })
 
         return data
@@ -82,8 +79,8 @@ class PathFinder:
     def find_shortest_path(self, db: Session, start_ref: Dict[str, Any], end_ref: Dict[str, Any]) -> Dict[str, Any]:
         try:
             logger.info('helloooo')
-            start_id = self.resolve_point(db, start_ref)
-            end_id = self.resolve_point(db, end_ref)
+            start_id = self.resolve_node(db, start_ref)
+            end_id = self.resolve_node(db, end_ref)
 
             path_point_ids = nx.shortest_path(
                 self.graph,
@@ -106,15 +103,15 @@ class PathFinder:
 
                 edge = self.graph.get_edge_data(start, end)
                 path_segments.append({
-                    "start_point_id": start,
-                    "end_point_id": end,
+                    "start_node_id": start,
+                    "end_node_id": end,
                     "distance": edge["weight"],
                     "geometry": db.scalar(edge["geometry"].ST_AsGeoJSON()),
                     "floor": edge["floor"]
                 })
 
             path_points = [
-                self.get_point_details(db, pid) for pid in path_point_ids
+                self.get_node_details(db, pid) for pid in path_point_ids
             ]
 
             return {
@@ -125,10 +122,10 @@ class PathFinder:
             }
 
         except nx.NetworkXNoPath:
-            return {"success": False, "error": "No path found between the specified points"}
+            return {"success": False, "error": "No path found between the specified nodes"}
 
         except nx.NodeNotFound:
-            return {"success": False, "error": "One or both points not found in the graph"}
+            return {"success": False, "error": "One or both nodes not found in the graph"}
 
         except ValueError as e:
             return {"success": False, "error": str(e)}
