@@ -9,7 +9,8 @@ class Maps(Base):
     name: Mapped[str] = mapped_column(unique=True, nullable=True)
     user_id: Mapped[int] = mapped_column(
         ForeignKey("users.id", ondelete="CASCADE"),
-        index=True
+        index=True,
+        nullable=True
     )
 
     user = relationship("User", back_populates="maps")

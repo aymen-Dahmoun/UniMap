@@ -13,13 +13,14 @@ def get_all_nodes(db: Session):
     return [node_to_geojson(n) for n in nodes]
 
 
-def create_node(db: Session, n: NodeMap):
+def create_node(db: Session, n: NodeMap, building_id: int | None = None):
     geometry = wkt.loads(n.geometry)
     node = Nodes(
         name=n.name,
         node_type=n.node_type,
         floor=n.floor,
-        node_geometry=from_shape(geometry, srid=4326)
+        node_geometry=from_shape(geometry, srid=4326),
+        building_id=building_id
     )
     db.add(node)
     db.flush()

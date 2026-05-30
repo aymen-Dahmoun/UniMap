@@ -18,7 +18,15 @@ def create_path(db: Session, start_id: int, end_id: int, p: PathMap):
     start_node = db.query(Nodes).filter(Nodes.id == start_id).first()
     if not start_node:
         raise ValueError(f"Start node {start_id} not found")
-    building_id = start_node.building_id
+    end_node = db.query(Nodes).filter(Nodes.id == end_id).first()
+    if not end_node:
+        raise ValueError(f"End node {end_id} not found")
+    building_id = start_node.building_id or end_node.building_id
+    if building_id is None:
+        raise ValueError(
+            f"Missing building_id for path from {start_id} to {end_id}. "
+            "Ensure nodes are associated with a building."
+        )
     path = Paths(
         start_node_id=start_id,
         end_node_id=end_id,

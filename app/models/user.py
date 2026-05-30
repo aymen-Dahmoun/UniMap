@@ -9,5 +9,4 @@ class User(Base):
     email: Mapped[str] = mapped_column(String, unique=True, nullable=False, index=True)
     hashed_password: Mapped[str] = mapped_column(String, nullable=False)
 
-    pins = relationship("UserPin", back_populates="user", cascade="all, delete-orphan")
     maps = relationship("Maps", back_populates="user", cascade="all, delete-orphan")

@@ -33,6 +33,8 @@ class PathMap(BaseModel):
 
 
 class MapCreate(BaseModel):
+    name: str
+    user_email: str
     buildings: List[BuildingSchema]
     nodes: List[NodeMap]
     paths: List[PathMap]

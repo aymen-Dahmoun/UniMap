@@ -1,11 +1,13 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from app.models.nodes import Nodes
 from geoalchemy2.shape import to_shape
+from shapely import wkt
 from app.core.database import get_db
 from app.models.buildings import Buildings
 from app.models.maps import Maps
 from app.models.paths import Paths
+from app.models.user import User
 from app.schemas.map import MapCreate
 from app.crud.rooms import create_room_flush
 from app.crud.buildings import create_building_flush
@@ -83,20 +85,45 @@ def create_map(payload: MapCreate, db: Session = Depends(get_db)):
 
     room_name_to_node = {}
     node_name_to_node = {}
+    building_geometries = []
 
-    map_obj = Maps(name=payload.name, user_id=payload.user_id)
+    user = db.query(User).filter(User.email == payload.user_email).first()
+    if not user:
+        raise HTTPException(status_code=400, detail="User email does not exist")
+
+    map_obj = Maps(name=payload.name, user_id=user.id)
     db.add(map_obj)
     db.flush()
 
     for b in payload.buildings:
         building = create_building_flush(db, b, map_obj.id)
+        try:
+            building_geometry = wkt.loads(b.geometry)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid building geometry for '{b.name}': {exc}") from exc
+        building_geometries.append({
+            "id": building.id,
+            "floor": building.floor,
+            "geometry": building_geometry,
+        })
 
         for r in b.rooms:
             room = create_room_flush(db, r, building.id)
             room_name_to_node[r.name] = room.id
 
     for n in payload.nodes:
-        node = create_node(db, n)
+        try:
+            node_point = wkt.loads(n.geometry)
+        except Exception as exc:
+            raise HTTPException(status_code=400, detail=f"Invalid node geometry for '{n.name}': {exc}") from exc
+
+        building_id = None
+        for b in building_geometries:
+            if b["floor"] == n.floor and b["geometry"].covers(node_point):
+                building_id = b["id"]
+                break
+
+        node = create_node(db, n, building_id=building_id)
         node_name_to_node[n.name] = node.id
 
     for p in payload.paths:
