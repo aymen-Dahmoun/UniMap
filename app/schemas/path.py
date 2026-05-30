@@ -6,13 +6,14 @@ class PathBase(BaseModel):
     end_point_id: int
     distance: float
     geometry: Any
+    floor: int
 
 class PathCreate(BaseModel):
     start_point_id: int
     end_point_id: int
     distance: float
     geometry: str
-    floor: Optional[int]
+    floor: int
 
 class PathResponse(PathBase):
     id: int
@@ -20,6 +21,7 @@ class PathResponse(PathBase):
     end_point_id: int
     distance: float
     geometry: Any
+    floor: int
 
 class NavigationResponse(BaseModel):
     success: bool

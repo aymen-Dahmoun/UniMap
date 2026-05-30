@@ -18,7 +18,7 @@ def create_path(db: Session, start_id: int, end_id: int, p: PathMap):
         start_point_id=start_id,
         end_point_id=end_id,
         distance=p.distance,
-        floor=1,
+        floor=p.floor,
         geometry=from_shape(wkt.loads(p.geometry), srid=4326)
     )
     db.add(path)

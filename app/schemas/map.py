@@ -29,6 +29,7 @@ class PathMap(BaseModel):
     end_ref: str
     distance: float
     geometry: str
+    floor: int
 
 
 class MapCreate(BaseModel):

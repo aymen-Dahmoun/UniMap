@@ -68,7 +68,8 @@ def get_full_map(db: Session = Depends(get_db)):
                 "end_type": "room" if end_point.type == "room" else "node",
                 "end_ref": end_point.ref_id,
                 "distance": p.distance,
-                "geometry": to_shape(p.geometry).wkt
+                "geometry": to_shape(p.geometry).wkt,
+                "floor": p.floor
             })
 
     return {
