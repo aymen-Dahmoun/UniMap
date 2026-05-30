@@ -1,10 +1,10 @@
 from sqlalchemy.orm import Session
 from app.models.user import User
 from app.schemas.user import UserCreate
-from passlib.hash import bcrypt
+from passlib.hash import pbkdf2_sha256
 
 def create_user(db: Session, user: UserCreate):
-    hashed = bcrypt.hash(user.password)
+    hashed = pbkdf2_sha256.hash(user.password)
     db_user = User(email=user.email, hashed_password=hashed)
     db.add(db_user)
     db.commit()
