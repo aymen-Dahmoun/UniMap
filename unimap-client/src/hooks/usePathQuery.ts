@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { fetchPath } from '../api/pathService';
-import type { MapFeature, MapGeometry } from '../models/types';
+import type { MapFeature, MapGeometry, PathPoint } from '../models/types';
 
 type Coord = [number, number];
 
@@ -58,6 +58,7 @@ const normalizeLineDirection = (geom: MapGeometry, startCoord: Coord | null, end
 
 export function usePathQuery() {
   const [pathSegments, setPathSegments] = useState<MapFeature[]>([]);
+  const [pathPoints, setPathPoints] = useState<PathPoint[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -68,11 +69,19 @@ export function usePathQuery() {
       const data = await fetchPath(startType, startId, endType, endId);
       // data.path_segments has geometries and floors
       const pointsById = new Map<string, Coord>();
-      (data.path_points || []).forEach((p: Record<string, unknown>) => {
+      const points: PathPoint[] = (data.path_points || []).map((p: Record<string, unknown>) => {
         const geom = typeof p.geometry === 'string' ? JSON.parse(p.geometry) : p.geometry;
         const coord = getCoordFromGeometry(geom as MapGeometry);
         if (coord && p.id != null) pointsById.set(String(p.id), coord);
+        return {
+          id: String(p.id),
+          name: typeof p.name === 'string' ? p.name : undefined,
+          type: (p.type as PathPoint['type']) ?? undefined,
+          node_type: typeof p.node_type === 'string' ? p.node_type : undefined,
+          floor: typeof p.floor === 'number' ? p.floor : undefined
+        };
       });
+
 
       const segments: MapFeature[] = (data.path_segments || []).map((s: Record<string, unknown>) => {
         const geometry = typeof s.geometry === 'string' ? JSON.parse(s.geometry) : s.geometry;
@@ -86,11 +95,13 @@ export function usePathQuery() {
         };
       });
       setPathSegments(segments);
+      setPathPoints(points);
       return data;
     } catch (err: unknown) {
       if (err instanceof Error) setError(err.message);
       else setError(String(err));
       setPathSegments([]);
+      setPathPoints([]);
     } finally {
       setLoading(false);
     }
@@ -98,8 +109,9 @@ export function usePathQuery() {
 
   const clearPath = () => {
     setPathSegments([]);
+    setPathPoints([]);
     setError(null);
   };
 
-  return { pathSegments, loading, error, queryPath, clearPath };
+  return { pathSegments, pathPoints, loading, error, queryPath, clearPath };
 }

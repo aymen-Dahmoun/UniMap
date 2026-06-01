@@ -16,6 +16,14 @@ export type MapData = {
   paths: MapFeature[];
 };
 
+export type PathPoint = {
+  id: string | number;
+  name?: string;
+  type?: "room" | "node" | "landmark";
+  node_type?: string;
+  floor?: number;
+};
+
 export type Selection = {
   id: string;
   type: "room" | "node";
