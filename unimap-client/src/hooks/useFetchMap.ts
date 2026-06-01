@@ -1,15 +1,25 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
 import { fetchMapLayer } from '../api/mapService';
-import type { MapData, MapFeature } from '../models/types';
+import type { MapData, MapFeature, MapGeometry } from '../models/types';
 
 function normalizeToFeature(item: Record<string, unknown>, additionalProps: Record<string, unknown> = {}): MapFeature {
-  const geometryStr = item.geometry as string | Record<string, unknown>;
+  const geometryStr = item.geometry as string | Record<string, unknown> | null | undefined;
   const geometry = typeof geometryStr === 'string' ? JSON.parse(geometryStr) : geometryStr;
-  if (geometry.type === 'Feature') {
-    return { ...geometry, properties: { ...geometry.properties, ...additionalProps } };
+  if (geometry && (geometry as MapFeature).type === 'Feature') {
+    return { ...(geometry as MapFeature), properties: { ...(geometry as MapFeature).properties, ...additionalProps } };
   }
-  return { type: 'Feature', geometry: geometry as any, properties: additionalProps };
+  return { type: 'Feature', geometry: geometry as MapGeometry, properties: additionalProps };
+}
+
+function ensurePointGeometry(feature: MapFeature): MapFeature {
+  if (!feature.geometry || !feature.geometry.type || feature.geometry.coordinates == null) {
+    return {
+      ...feature,
+      geometry: { type: 'Point', coordinates: [0, 0] }
+    };
+  }
+  return feature;
 }
 
 export function useFetchMap() {
@@ -28,10 +38,15 @@ export function useFetchMap() {
         fetchMapLayer('path')
       ]);
 
+      const roomIdSet = new Set(roomsRes.map((i: any) => String(i.id)));
+      const filteredNodes = nodesRes.filter((i: any) => !roomIdSet.has(String(i.id)));
+
       setData({
         buildings: buildingsRes.map((i: any) => normalizeToFeature(i, { id: i.id, name: i.name, floor: i.floor })),
         rooms: roomsRes.map((i: any) => normalizeToFeature(i, { id: i.id, name: i.name, floor: i.floor })),
-        nodes: nodesRes.map((i: any) => normalizeToFeature(i, { id: i.id, name: i.name, node_type: i.node_type, floor: i.floor })),
+        nodes: filteredNodes.map((i: any) => ensurePointGeometry(
+          normalizeToFeature(i, { id: i.id, name: i.name, node_type: i.node_type, floor: i.floor })
+        )),
         paths: pathsRes.map((i: any) => normalizeToFeature(i, { id: i.id, distance: i.distance, floor: i.floor }))
       });
     } catch (err: any) {
