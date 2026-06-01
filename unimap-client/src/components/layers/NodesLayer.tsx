@@ -16,7 +16,7 @@ export function NodesLayer({ nodes, selectedId, onSelect }: NodesLayerProps) {
           <Shape
             key={String(n.properties.id)}
             feature={n}
-            r={isSelected ? 0.00007 : 0.00005}
+            r={isSelected ? 0.00005 : 0.00004}
             fill={isSelected ? "#ea580c" : "#f97316"}
             fillOpacity={isSelected ? 1 : 0.9}
             stroke={isSelected ? "#ea580c" : "#f97316"}

@@ -55,9 +55,7 @@ export function MapCanvas({ data, pathSegments, selectedId, onSelect, currentFlo
           <BuildingsLayer buildings={buildings} />
           <RoomsLayer rooms={rooms} selectedId={selectedId} onSelect={(id, f) => onSelect?.(id, f, 'room')} />
           <NodesLayer nodes={nodes} selectedId={selectedId} onSelect={(id, f) => onSelect?.(id, f, 'node')} />
-          {/* General paths layer (like paths connecting everything) */}
           <PathLayer pathSegments={paths} stroke="#9ca3af" strokeWidth={1} />
-          {/* Highlighted routing path */}
           <PathLayer pathSegments={pathSegments} stroke="#3b82f6" strokeWidth={3} />
         </g>
       </svg>
