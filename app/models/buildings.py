@@ -9,7 +9,7 @@ class Buildings(Base):
     __tablename__ = "buildings"
 
     id: Mapped[int] = mapped_column(primary_key=True, index=True)
-    name: Mapped[str] = mapped_column(unique=True, nullable=True)
+    name: Mapped[str] = mapped_column(nullable=True)
     geometry: Mapped[WKBElement] = mapped_column(Geometry("POLYGON", srid=4326))
     floor: Mapped[int] = mapped_column(default=1)
     map_id: Mapped[int] = mapped_column(

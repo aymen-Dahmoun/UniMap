@@ -40,12 +40,13 @@ def create_rooms(db: Session, data: Union[RoomsCreate, List[RoomsCreate]]):
         results.append(room_to_geojson(obj))
 
     return results
-def create_room_flush(db: Session, b: RoomSchema, building_id: int):
+def create_room_flush(db: Session, b: RoomSchema, building_id: int, map_id: int | None = None):
     geometry = wkt.loads(b.geometry)
     rooms = Rooms(
         name=b.name,
         floor=b.floor,
         building_id=building_id,
+        map_id=map_id,
         geometry=from_shape(geometry, srid=4326),
         node_geometry=from_shape(geometry.centroid, srid=4326)
     )

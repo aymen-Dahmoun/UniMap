@@ -4,11 +4,14 @@ import { usePathQuery } from '../hooks/usePathQuery';
 import { MapCanvas } from '../components/MapCanvas';
 import { SidePanel } from '../components/SidePanel';
 import { PathTrace } from '../components/PathTrace';
+import { SearchBar } from '../components/SearchBar';
 import type { MapFeature } from '../models/types';
 import { Link } from 'react-router-dom';
 
 export function MapViewer() {
-  const { data, loading: mapLoading, error: mapError } = useFetchMap();
+  const [currentMapId, setCurrentMapId] = useState<number | null>(null);
+
+  const { data, loading: mapLoading, error: mapError } = useFetchMap(currentMapId);
   const { pathSegments, pathPoints, loading: pathLoading, error: pathError, queryPath, clearPath } = usePathQuery();
   const [currentFloor, setCurrentFloor] = useState<string>('all');
   const [selectedFeature, setSelectedFeature] = useState<{ id: string, feature: MapFeature, type: "room" | "node" } | null>(null);
@@ -53,10 +56,29 @@ export function MapViewer() {
     }
   };
 
+  const handleSelectMap = (mapId: number) => {
+    setCurrentMapId(mapId);
+  };
+
+  const handleSelectNode = (nodeId: string, type: 'room' | 'node', floor: number) => {
+    const feature = type === 'room' ? featureLookup.rooms.get(nodeId) : featureLookup.nodes.get(nodeId);
+    if (feature) {
+      handleSelect(nodeId, feature, type);
+      setCurrentFloor(String(floor));
+    }
+  };
+
   return (
     <div style={{ display: 'flex', height: '100vh', width: '100vw', fontFamily: 'sans-serif', flexDirection: 'column' }}>
       <div className="bg-blue-600 text-white flex justify-between items-center px-4 py-2 flex-shrink-0">
         <h1 className="font-bold text-xl">UniMap Viewer</h1>
+        <div style={{ flex: 1, display: 'flex', justifyContent: 'center' }}>
+          <SearchBar
+            currentMapId={currentMapId}
+            onSelectMap={handleSelectMap}
+            onSelectNode={handleSelectNode}
+          />
+        </div>
         <div>
           <Link to="/editor" className="bg-white text-blue-600 px-3 py-1 rounded text-sm font-medium hover:bg-gray-100 transition">
             Go to Editor
@@ -64,32 +86,43 @@ export function MapViewer() {
         </div>
       </div>
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        <SidePanel
-          mapLoading={mapLoading}
-          mapError={mapError}
-          currentFloor={currentFloor}
-          floors={allFloors}
-          onFloorChange={setCurrentFloor}
-          selectedFeature={selectedFeature}
-          onSetStart={handleSetStart}
-          onSetEnd={handleSetEnd}
-          startPoint={startPoint}
-          endPoint={endPoint}
-          onFindPath={handleFindPath}
-          onClearPath={clearPath}
-          pathLoading={pathLoading}
-          pathError={pathError}
-        />
-
-        <div style={{ flex: 1, position: 'relative', backgroundColor: 'white' }}>
-          <MapCanvas
-            data={data}
-            pathSegments={pathSegments}
-            selectedId={selectedFeature?.id}
-            onSelect={handleSelect}
+        {currentMapId !== null && (
+          <SidePanel
+            mapLoading={mapLoading}
+            mapError={mapError}
             currentFloor={currentFloor}
+            floors={allFloors}
+            onFloorChange={setCurrentFloor}
+            selectedFeature={selectedFeature}
+            onSetStart={handleSetStart}
+            onSetEnd={handleSetEnd}
+            startPoint={startPoint}
+            endPoint={endPoint}
+            onFindPath={handleFindPath}
+            onClearPath={clearPath}
+            pathLoading={pathLoading}
+            pathError={pathError}
           />
-          <PathTrace points={pathPoints} featureLookup={featureLookup} />
+        )}
+
+        <div style={{ flex: 1, position: 'relative', backgroundColor: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {currentMapId === null ? (
+            <div style={{ textAlign: 'center', color: '#666' }}>
+              <h2>Welcome to UniMap</h2>
+              <p>Please use the search bar above to select a map.</p>
+            </div>
+          ) : (
+            <>
+              <MapCanvas
+                data={data}
+                pathSegments={pathSegments}
+                selectedId={selectedFeature?.id}
+                onSelect={handleSelect}
+                currentFloor={currentFloor}
+              />
+              <PathTrace points={pathPoints} featureLookup={featureLookup} />
+            </>
+          )}
         </div>
       </div>
     </div>

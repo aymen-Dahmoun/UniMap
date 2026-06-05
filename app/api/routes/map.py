@@ -31,13 +31,13 @@ def get_full_map(db: Session = Depends(get_db)):
             "id": b.id,
             "name": b.name,
             "floor": b.floor,
-            "geometry": to_shape(b.geometry).wkt,
+            "geometry": to_shape(b.geometry).__geo_interface__,
             "rooms": [
                 {
                     "id": r.id,
                     "name": r.name,
                     "floor": r.floor,
-                    "geometry": to_shape(r.geometry).wkt
+                    "geometry": to_shape(r.geometry).__geo_interface__
                 }
                 for r in b.rooms
             ]
@@ -51,7 +51,7 @@ def get_full_map(db: Session = Depends(get_db)):
             "floor": n.floor,
             "node_kind": n.node_kind,
             "node_type": n.node_type,
-            "geometry": to_shape(n.node_geometry).wkt
+            "geometry": to_shape(n.node_geometry).__geo_interface__
         }
         for n in nodes
     ]
@@ -70,7 +70,76 @@ def get_full_map(db: Session = Depends(get_db)):
                 "end_type": end_node.node_kind,
                 "end_ref": end_node.id,
                 "distance": p.distance,
-                "geometry": to_shape(p.geometry).wkt,
+                "geometry": to_shape(p.geometry).__geo_interface__,
+                "floor": p.floor
+            })
+
+    return {
+        "buildings": buildings_data,
+        "nodes": nodes_data,
+        "paths": paths_data
+    }
+
+@router.get("/{map_id}")
+def get_specific_map(map_id: int, db: Session = Depends(get_db)):
+    logger.info(f"Fetching map {map_id}")
+
+    buildings_data = []
+    buildings = db.query(Buildings).filter(Buildings.map_id == map_id).all()
+    building_ids = [b.id for b in buildings]
+
+    for b in buildings:
+        buildings_data.append({
+            "id": b.id,
+            "name": b.name,
+            "floor": b.floor,
+            "geometry": to_shape(b.geometry).__geo_interface__,
+            "rooms": [
+                {
+                    "id": r.id,
+                    "name": r.name,
+                    "floor": r.floor,
+                    "geometry": to_shape(r.geometry).__geo_interface__
+                }
+                for r in b.rooms
+            ]
+        })
+
+    from sqlalchemy import or_
+    nodes = db.query(Nodes).filter(
+        or_(
+            Nodes.building_id.in_(building_ids) if building_ids else False,
+            Nodes.map_id == map_id
+        )
+    ).all()
+    nodes_data = [
+        {
+            "id": n.id,
+            "name": n.name,
+            "floor": n.floor,
+            "node_kind": n.node_kind,
+            "node_type": n.node_type,
+            "geometry": to_shape(n.node_geometry).__geo_interface__
+        }
+        for n in nodes
+    ]
+
+    paths = db.query(Paths).filter(Paths.map_id == map_id).all()
+
+    paths_data = []
+    for p in paths:
+        start_node = db.query(Nodes).filter(Nodes.id == p.start_node_id).first()
+        end_node = db.query(Nodes).filter(Nodes.id == p.end_node_id).first()
+
+        if start_node and end_node:
+            paths_data.append({
+                "id": p.id,
+                "start_type": start_node.node_kind,
+                "start_ref": start_node.id,
+                "end_type": end_node.node_kind,
+                "end_ref": end_node.id,
+                "distance": p.distance,
+                "geometry": to_shape(p.geometry).__geo_interface__,
                 "floor": p.floor
             })
 
@@ -108,7 +177,7 @@ def create_map(payload: MapCreate, db: Session = Depends(get_db)):
         })
 
         for r in b.rooms:
-            room = create_room_flush(db, r, building.id)
+            room = create_room_flush(db, r, building.id, map_id=map_obj.id)
             room_name_to_node[r.name] = room.id
 
     for n in payload.nodes:
@@ -123,24 +192,25 @@ def create_map(payload: MapCreate, db: Session = Depends(get_db)):
                 building_id = b["id"]
                 break
 
-        node = create_node(db, n, building_id=building_id)
+        node = create_node(db, n, building_id=building_id, map_id=map_obj.id)
         node_name_to_node[n.name] = node.id
 
     for p in payload.paths:
 
         start_node = (
-            room_name_to_node[p.start_ref]
+            room_name_to_node.get(p.start_ref)
             if p.start_type == "room"
-            else node_name_to_node[p.start_ref]
+            else node_name_to_node.get(p.start_ref)
         )
 
         end_node = (
-            room_name_to_node[p.end_ref]
+            room_name_to_node.get(p.end_ref)
             if p.end_type == "room"
-            else node_name_to_node[p.end_ref]
+            else node_name_to_node.get(p.end_ref)
         )
 
-        create_path(db, start_node, end_node, p)
+        if start_node and end_node:
+            create_path(db, start_node, end_node, p, map_id=map_obj.id)
 
     db.commit()
 

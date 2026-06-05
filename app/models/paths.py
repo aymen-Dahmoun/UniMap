@@ -13,7 +13,8 @@ class Paths(Base):
     distance: Mapped[float] = mapped_column(Float)
     geometry: Mapped[WKBElement] = mapped_column(Geometry("LINESTRING", srid=4326))
     floor: Mapped[int] = mapped_column(default=1)
-    building_id: Mapped[int] = mapped_column(ForeignKey("buildings.id", ondelete="CASCADE"))
+    building_id: Mapped[int | None] = mapped_column(ForeignKey("buildings.id", ondelete="CASCADE"), nullable=True)
+    map_id: Mapped[int | None] = mapped_column(ForeignKey("maps.id", ondelete="CASCADE"), index=True, nullable=True)
     building = relationship("Buildings", back_populates="paths")
 
     start_node = relationship(

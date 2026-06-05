@@ -5,6 +5,7 @@ from app.api.routes.rooms import router as rooms_router
 from app.api.routes.path import router as path_router
 from app.api.routes.map import router as map_route
 from app.api.routes.navigation_nodes import router as navigation_nodes_router
+from app.api.routes.search import router as search_router
 
 
 api_router = APIRouter()
@@ -14,3 +15,4 @@ api_router.include_router(rooms_router, prefix="/api", tags=["Rooms"])
 api_router.include_router(path_router, prefix="/api", tags=["Path"])
 api_router.include_router(map_route, prefix="/api", tags=["Map"])
 api_router.include_router(navigation_nodes_router, prefix="/api", tags=["Navigation Nodes"])
+api_router.include_router(search_router, prefix="/api", tags=["Search"])

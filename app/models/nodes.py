@@ -24,6 +24,11 @@ class Nodes(Base):
 		index=True,
 		nullable=True
 	)
+	map_id: Mapped[int | None] = mapped_column(
+		ForeignKey("maps.id", ondelete="CASCADE"),
+		index=True,
+		nullable=True
+	)
 
 	building = relationship(
 		"Buildings",

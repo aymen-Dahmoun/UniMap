@@ -8,7 +8,6 @@ import type {
   EditorMode,
   DrawTarget,
   SelectionState,
-  NodeType,
 } from "../components/MapEditor/types";
 import {
   polygonToWKT,
@@ -318,7 +317,24 @@ export function useMapEditor() {
     buildingId: string,
     roomId: string,
     updates: Partial<EditorRoom>
-  ) =>
+  ) => {
+    if (updates.name !== undefined) {
+      setBuildings((p) => {
+        const building = p.find(b => b.id === buildingId);
+        const oldName = building?.rooms.find(r => r.id === roomId)?.name;
+        if (oldName && oldName !== updates.name) {
+          setPaths((pts) =>
+            pts.map((pth) => ({
+              ...pth,
+              start_ref: pth.start_type === "room" && pth.start_ref === oldName ? updates.name! : pth.start_ref,
+              end_ref: pth.end_type === "room" && pth.end_ref === oldName ? updates.name! : pth.end_ref,
+            }))
+          );
+        }
+        return p;
+      });
+    }
+
     setBuildings((p) =>
       p.map((b) =>
         b.id === buildingId
@@ -331,9 +347,27 @@ export function useMapEditor() {
           : b
       )
     );
+  };
 
-  const updateNode = (id: string, updates: Partial<EditorNode>) =>
+  const updateNode = (id: string, updates: Partial<EditorNode>) => {
+    if (updates.name !== undefined) {
+      setNodes((p) => {
+        const oldName = p.find(n => n.id === id)?.name;
+        if (oldName && oldName !== updates.name) {
+          setPaths((pts) =>
+            pts.map((pth) => ({
+              ...pth,
+              start_ref: pth.start_type === "node" && pth.start_ref === oldName ? updates.name! : pth.start_ref,
+              end_ref: pth.end_type === "node" && pth.end_ref === oldName ? updates.name! : pth.end_ref,
+            }))
+          );
+        }
+        return p;
+      });
+    }
+
     setNodes((p) => p.map((n) => (n.id === id ? { ...n, ...updates } : n)));
+  };
 
   /* ── Delete ── */
   const deleteSelection = useCallback(() => {

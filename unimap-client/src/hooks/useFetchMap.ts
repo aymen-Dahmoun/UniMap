@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, react-hooks/set-state-in-effect */
 import { useState, useEffect } from 'react';
-import { fetchMapLayer } from '../api/mapService';
+import { getMap } from '../api/mapService';
 import type { MapData, MapFeature, MapGeometry } from '../models/types';
 
 function normalizeToFeature(item: Record<string, unknown>, additionalProps: Record<string, unknown> = {}): MapFeature {
@@ -22,21 +22,27 @@ function ensurePointGeometry(feature: MapFeature): MapFeature {
   return feature;
 }
 
-export function useFetchMap() {
+export function useFetchMap(mapId: number | null) {
   const [data, setData] = useState<MapData>({ buildings: [], rooms: [], nodes: [], paths: [] });
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchAll = async () => {
+  const fetchSpecificMap = async (id: number) => {
     setLoading(true);
     setError(null);
     try {
-      const [buildingsRes, roomsRes, nodesRes, pathsRes] = await Promise.all([
-        fetchMapLayer('buildings'),
-        fetchMapLayer('rooms'),
-        fetchMapLayer('nodes'),
-        fetchMapLayer('path')
-      ]);
+      const mapRes = await getMap(id);
+
+      const buildingsRes = mapRes.buildings || [];
+
+      // Collect all rooms
+      const roomsRes: any[] = [];
+      buildingsRes.forEach((b: any) => {
+        if (b.rooms) roomsRes.push(...b.rooms);
+      });
+
+      const nodesRes = mapRes.nodes || [];
+      const pathsRes = mapRes.paths || [];
 
       const roomIdSet = new Set(roomsRes.map((i: any) => String(i.id)));
       const filteredNodes = nodesRes.filter((i: any) => !roomIdSet.has(String(i.id)));
@@ -57,8 +63,12 @@ export function useFetchMap() {
   };
 
   useEffect(() => {
-    fetchAll();
-  }, []);
+    if (mapId !== null) {
+      fetchSpecificMap(mapId);
+    } else {
+      setData({ buildings: [], rooms: [], nodes: [], paths: [] });
+    }
+  }, [mapId]);
 
-  return { data, loading, error, refetch: fetchAll };
+  return { data, loading, error, refetch: () => mapId && fetchSpecificMap(mapId) };
 }

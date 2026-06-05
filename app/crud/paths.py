@@ -14,7 +14,7 @@ def list_paths(db: Session):
     paths = db.query(Paths).all()
     return [path_to_geojson(p) for p in paths]
 
-def create_path(db: Session, start_id: int, end_id: int, p: PathMap):
+def create_path(db: Session, start_id: int, end_id: int, p: PathMap, map_id: int | None = None):
     start_node = db.query(Nodes).filter(Nodes.id == start_id).first()
     if not start_node:
         raise ValueError(f"Start node {start_id} not found")
@@ -22,18 +22,14 @@ def create_path(db: Session, start_id: int, end_id: int, p: PathMap):
     if not end_node:
         raise ValueError(f"End node {end_id} not found")
     building_id = start_node.building_id or end_node.building_id
-    if building_id is None:
-        raise ValueError(
-            f"Missing building_id for path from {start_id} to {end_id}. "
-            "Ensure nodes are associated with a building."
-        )
     path = Paths(
         start_node_id=start_id,
         end_node_id=end_id,
         distance=p.distance,
         floor=p.floor,
         geometry=from_shape(wkt.loads(p.geometry), srid=4326),
-        building_id=building_id
+        building_id=building_id,
+        map_id=map_id
     )
     db.add(path)
     db.flush()
