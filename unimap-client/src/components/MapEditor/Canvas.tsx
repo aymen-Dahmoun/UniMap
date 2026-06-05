@@ -1,46 +1,98 @@
 import React, { useRef, useState } from "react";
-import type { EditorBuilding, EditorRoom, EditorNode, EditorPath, EditorMode, SelectionState } from "./types";
+import type {
+  EditorBuilding,
+  EditorNode,
+  EditorPath,
+  EditorMode,
+  SelectionState,
+} from "./types";
+import { calcDistance } from "../../utils/geometry";
 
 interface CanvasProps {
   buildings: EditorBuilding[];
-  rooms: EditorRoom[];
   nodes: EditorNode[];
   paths: EditorPath[];
   mode: EditorMode;
+  currentFloor: number;
   selection: SelectionState;
   layersVisible: { buildings: boolean; rooms: boolean; nodes: boolean; paths: boolean };
+
+  // Polygon
   activePolygon: [number, number][];
-  activePathStartNode: string | null;
+
+  // Rectangle
+  rectStart: [number, number] | null;
+  rectEnd: [number, number] | null;
+
+  // Circle
+  circleCenter: [number, number] | null;
+  circleEdge: [number, number] | null;
+
+  // Path
+  pathStart: { type: "room" | "node"; ref: string; point: [number, number] } | null;
+
+  // Handlers
   handleCanvasClick: (x: number, y: number) => void;
   handleCanvasDoubleClick: () => void;
   handleNodeClick: (id: string, e: React.MouseEvent) => void;
+  handleRoomClick: (buildingId: string, roomId: string, e: React.MouseEvent) => void;
   handleItemClick: (type: SelectionState["type"], id: string, e: React.MouseEvent) => void;
-  
+
+  handleRectMouseDown: (x: number, y: number) => void;
+  handleRectMouseMove: (x: number, y: number) => void;
+  handleRectMouseUp: () => void;
+
+  handleCircleMouseDown: (x: number, y: number) => void;
+  handleCircleMouseMove: (x: number, y: number) => void;
+  handleCircleMouseUp: () => void;
+
   // Dragging
   startDragNode: (id: string, e: React.MouseEvent) => void;
   onDragNode: (x: number, y: number) => void;
   stopDragNode: () => void;
-  startDragShape: (type: "building" | "room", id: string, x: number, y: number, e: React.MouseEvent) => void;
+  startDragShape: (
+    type: "building" | "room",
+    id: string,
+    x: number,
+    y: number,
+    e: React.MouseEvent,
+    buildingId?: string
+  ) => void;
   onDragShape: (x: number, y: number) => void;
   stopDragShape: () => void;
 }
 
 export const Canvas: React.FC<CanvasProps> = ({
   buildings,
-  rooms,
   nodes,
   paths,
   mode,
+  currentFloor,
   selection,
   layersVisible,
   activePolygon,
-  activePathStartNode,
+  rectStart,
+  rectEnd,
+  circleCenter,
+  circleEdge,
+  pathStart,
   handleCanvasClick,
   handleCanvasDoubleClick,
   handleNodeClick,
+  handleRoomClick,
   handleItemClick,
-  startDragNode, onDragNode, stopDragNode,
-  startDragShape, onDragShape, stopDragShape
+  handleRectMouseDown,
+  handleRectMouseMove,
+  handleRectMouseUp,
+  handleCircleMouseDown,
+  handleCircleMouseMove,
+  handleCircleMouseUp,
+  startDragNode,
+  onDragNode,
+  stopDragNode,
+  startDragShape,
+  onDragShape,
+  stopDragShape,
 }) => {
   const svgRef = useRef<SVGSVGElement>(null);
   const [viewBox, setViewBox] = useState({ x: 0, y: 0, w: 2000, h: 2000 });
@@ -57,17 +109,29 @@ export const Canvas: React.FC<CanvasProps> = ({
     return { x: svgP.x, y: svgP.y };
   };
 
+  // Filter by floor
+  const floorBuildings = buildings.filter((b) => b.floor === currentFloor);
+  const floorNodes = nodes.filter((n) => n.floor === currentFloor);
+  const floorPaths = paths.filter((p) => p.floor === currentFloor);
+
   const onMouseDown = (e: React.MouseEvent) => {
+    // Middle-click or Alt+click → pan
     if (e.button === 1 || (e.button === 0 && e.altKey)) {
       setIsPanning(true);
       setStartPan({ x: e.clientX, y: e.clientY });
       return;
     }
+    if (e.button !== 0) return;
+    const { x, y } = getSVGCoords(e);
+
+    if (mode === "draw_rectangle") handleRectMouseDown(x, y);
+    if (mode === "draw_circle") handleCircleMouseDown(x, y);
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
     const coords = getSVGCoords(e);
     setMousePos(coords);
+
     if (isPanning) {
       const dx = (startPan.x - e.clientX) * (viewBox.w / svgRef.current!.clientWidth);
       const dy = (startPan.y - e.clientY) * (viewBox.h / svgRef.current!.clientHeight);
@@ -76,6 +140,8 @@ export const Canvas: React.FC<CanvasProps> = ({
     } else {
       onDragNode(coords.x, coords.y);
       onDragShape(coords.x, coords.y);
+      if (mode === "draw_rectangle") handleRectMouseMove(coords.x, coords.y);
+      if (mode === "draw_circle") handleCircleMouseMove(coords.x, coords.y);
     }
   };
 
@@ -83,18 +149,17 @@ export const Canvas: React.FC<CanvasProps> = ({
     setIsPanning(false);
     stopDragNode();
     stopDragShape();
+    if (mode === "draw_rectangle") handleRectMouseUp();
+    if (mode === "draw_circle") handleCircleMouseUp();
   };
 
   const onWheel = (e: React.WheelEvent) => {
     const zoomFactor = e.deltaY > 0 ? 1.1 : 0.9;
-    
-    // Zoom around mouse pointer
     if (!svgRef.current) return;
     const pt = svgRef.current.createSVGPoint();
     pt.x = e.clientX;
     pt.y = e.clientY;
     const svgP = pt.matrixTransform(svgRef.current.getScreenCTM()?.inverse());
-    
     setViewBox((v) => {
       const newW = v.w * zoomFactor;
       const newH = v.h * zoomFactor;
@@ -105,6 +170,36 @@ export const Canvas: React.FC<CanvasProps> = ({
   };
 
   const bgGridSize = 50;
+
+  // Helpers for rect/circle preview
+  const rectPreview =
+    mode === "draw_rectangle" && rectStart && rectEnd
+      ? {
+        x: Math.min(rectStart[0], rectEnd[0]),
+        y: Math.min(rectStart[1], rectEnd[1]),
+        w: Math.abs(rectEnd[0] - rectStart[0]),
+        h: Math.abs(rectEnd[1] - rectStart[1]),
+      }
+      : null;
+
+  const circlePreview =
+    mode === "draw_circle" && circleCenter && circleEdge
+      ? {
+        cx: circleCenter[0],
+        cy: circleCenter[1],
+        r: calcDistance(circleCenter, circleEdge),
+      }
+      : null;
+
+  // Nice mode label
+  const modeLabels: Record<EditorMode, string> = {
+    select: "SELECT",
+    draw_polygon: "POLYGON",
+    draw_rectangle: "RECTANGLE",
+    draw_circle: "CIRCLE",
+    add_node: "ADD NODE",
+    draw_path: "DRAW PATH",
+  };
 
   return (
     <div className="flex-1 relative overflow-hidden bg-gray-100 h-full cursor-crosshair">
@@ -129,96 +224,155 @@ export const Canvas: React.FC<CanvasProps> = ({
             <path d={`M ${bgGridSize} 0 L 0 0 0 ${bgGridSize}`} fill="none" stroke="#ddd" strokeWidth="1" />
           </pattern>
         </defs>
-        
-        {/* Infinite Grid Background */}
+
+        {/* Grid */}
         <rect x={viewBox.x} y={viewBox.y} width={viewBox.w} height={viewBox.h} fill="url(#grid)" />
 
         {/* Buildings */}
-        {layersVisible.buildings && buildings.map((b) => (
-          <polygon
-            key={b.id}
-            points={b.coordinates.map((c) => c.join(",")).join(" ")}
-            fill={selection.type === "building" && selection.id === b.id ? "#bfdbfe" : "#e5e7eb"}
-            stroke={selection.type === "building" && selection.id === b.id ? "#3b82f6" : "#9ca3af"}
-            strokeWidth="3"
-            onClick={(e) => handleItemClick("building", b.id, e)}
-            onMouseDown={(e) => {
-              if (mode === "select" && e.button !== 1 && !e.altKey) {
-                const {x, y} = getSVGCoords(e);
-                startDragShape("building", b.id, x, y, e);
-              }
-            }}
-            className="cursor-pointer hover:stroke-gray-500"
-          />
-        ))}
+        {layersVisible.buildings &&
+          floorBuildings.map((b) => (
+            <g key={b.id}>
+              <polygon
+                points={b.points.map((c) => c.join(",")).join(" ")}
+                fill={selection.type === "building" && selection.id === b.id ? "#bfdbfe" : "#e5e7eb"}
+                stroke={selection.type === "building" && selection.id === b.id ? "#3b82f6" : "#9ca3af"}
+                strokeWidth="3"
+                onClick={(e) => handleItemClick("building", b.id, e)}
+                onMouseDown={(e) => {
+                  if (mode === "select" && e.button !== 1 && !e.altKey) {
+                    const { x, y } = getSVGCoords(e);
+                    startDragShape("building", b.id, x, y, e);
+                  }
+                }}
+                className="cursor-pointer hover:stroke-gray-500"
+              />
+              {/* Building name label */}
+              {b.points.length > 0 && (() => {
+                const cx = b.points.reduce((s, p) => s + p[0], 0) / b.points.length;
+                const cy = b.points.reduce((s, p) => s + p[1], 0) / b.points.length;
+                return (
+                  <text
+                    x={cx}
+                    y={cy}
+                    textAnchor="middle"
+                    dominantBaseline="central"
+                    fill="#374151"
+                    fontSize="14"
+                    fontWeight="600"
+                    pointerEvents="none"
+                    style={{ userSelect: "none" }}
+                  >
+                    {b.name}
+                  </text>
+                );
+              })()}
 
-        {/* Rooms */}
-        {layersVisible.rooms && rooms.map((r) => (
-          <polygon
-            key={r.id}
-            points={r.coordinates.map((c) => c.join(",")).join(" ")}
-            fill={selection.type === "room" && selection.id === r.id ? "#fef08a" : "#fef9c3"}
-            stroke={selection.type === "room" && selection.id === r.id ? "#ca8a04" : "#fde047"}
-            strokeWidth="2"
-            onClick={(e) => handleItemClick("room", r.id, e)}
-            onMouseDown={(e) => {
-              if (mode === "select" && e.button !== 1 && !e.altKey) {
-                const {x, y} = getSVGCoords(e);
-                startDragShape("room", r.id, x, y, e);
-              }
-            }}
-            className="cursor-pointer hover:stroke-yellow-400"
-          />
-        ))}
+              {/* Rooms inside building */}
+              {layersVisible.rooms &&
+                b.rooms
+                  .filter((r) => r.floor === currentFloor)
+                  .map((r) => (
+                    <g key={r.id}>
+                      <polygon
+                        points={r.points.map((c) => c.join(",")).join(" ")}
+                        fill={selection.type === "room" && selection.id === r.id ? "#fef08a" : "rgba(254, 249, 195, 0.7)"}
+                        stroke={selection.type === "room" && selection.id === r.id ? "#ca8a04" : "#fde047"}
+                        strokeWidth="2"
+                        onClick={(e) => handleRoomClick(b.id, r.id, e)}
+                        onMouseDown={(e) => {
+                          if (mode === "select" && e.button !== 1 && !e.altKey) {
+                            const { x, y } = getSVGCoords(e);
+                            startDragShape("room", r.id, x, y, e, b.id);
+                          }
+                        }}
+                        className="cursor-pointer hover:stroke-yellow-400"
+                      />
+                      {r.points.length > 0 && (() => {
+                        const cx = r.points.reduce((s, p) => s + p[0], 0) / r.points.length;
+                        const cy = r.points.reduce((s, p) => s + p[1], 0) / r.points.length;
+                        return (
+                          <text
+                            x={cx}
+                            y={cy}
+                            textAnchor="middle"
+                            dominantBaseline="central"
+                            fill="#92400e"
+                            fontSize="11"
+                            pointerEvents="none"
+                            style={{ userSelect: "none" }}
+                          >
+                            {r.name}
+                          </text>
+                        );
+                      })()}
+                    </g>
+                  ))}
+            </g>
+          ))}
 
         {/* Paths */}
-        {layersVisible.paths && paths.map((p) => {
-          const start = nodes.find((n) => n.id === p.start_node);
-          const end = nodes.find((n) => n.id === p.end_node);
-          if (!start || !end) return null;
-          return (
+        {layersVisible.paths &&
+          floorPaths.map((p) => (
             <line
               key={p.id}
-              x1={start.x}
-              y1={start.y}
-              x2={end.x}
-              y2={end.y}
+              x1={p.points[0][0]}
+              y1={p.points[0][1]}
+              x2={p.points[1][0]}
+              y2={p.points[1][1]}
               stroke={selection.type === "path" && selection.id === p.id ? "#ef4444" : "#3b82f6"}
               strokeWidth="4"
               onClick={(e) => handleItemClick("path", p.id, e)}
               className="cursor-pointer hover:stroke-blue-400"
             />
-          );
-        })}
+          ))}
 
         {/* Nodes */}
-        {layersVisible.nodes && nodes.map((n) => (
-          <circle
-            key={n.id}
-            cx={n.x}
-            cy={n.y}
-            r="8"
-            fill={selection.type === "node" && selection.id === n.id ? "#ef4444" : "#10b981"}
-            stroke="#ffffff"
-            strokeWidth="2"
-            onClick={(e) => handleNodeClick(n.id, e)}
-            onMouseDown={(e) => {
-              if (mode === "select" && e.button !== 1 && !e.altKey) {
-                startDragNode(n.id, e);
-              }
-            }}
-            className="cursor-pointer hover:fill-green-400"
-          />
-        ))}
+        {layersVisible.nodes &&
+          floorNodes.map((n) => {
+            const isPathMode = mode === "draw_path";
+            const isSelected = selection.type === "node" && selection.id === n.id;
+            return (
+              <g key={n.id}>
+                <circle
+                  cx={n.x}
+                  cy={n.y}
+                  r="8"
+                  fill={isSelected ? "#ef4444" : isPathMode ? "#6366f1" : "#10b981"}
+                  stroke="#ffffff"
+                  strokeWidth="2"
+                  onClick={(e) => handleNodeClick(n.id, e)}
+                  onMouseDown={(e) => {
+                    if (mode === "select" && e.button !== 1 && !e.altKey) {
+                      startDragNode(n.id, e);
+                    }
+                  }}
+                  className={`cursor-pointer ${isPathMode ? "hover:fill-indigo-400" : "hover:fill-green-400"}`}
+                />
+                <text
+                  x={n.x}
+                  y={n.y - 14}
+                  textAnchor="middle"
+                  fill="#374151"
+                  fontSize="10"
+                  pointerEvents="none"
+                  style={{ userSelect: "none" }}
+                >
+                  {n.name}
+                </text>
+              </g>
+            );
+          })}
 
-        {/* Active Drawing Previews */}
-        {(mode === "draw_building" || mode === "draw_room") && activePolygon.length > 0 && (
+        {/* ── Drawing Previews ── */}
+
+        {/* Polygon preview */}
+        {mode === "draw_polygon" && activePolygon.length > 0 && (
           <>
             <polygon
-              points={[...activePolygon, [mousePos.x, mousePos.y]].map(p => p.join(",")).join(" ")}
-              fill="rgba(59, 130, 246, 0.2)"
+              points={[...activePolygon, [mousePos.x, mousePos.y]].map((p) => p.join(",")).join(" ")}
+              fill="rgba(59, 130, 246, 0.15)"
               stroke="#3b82f6"
-              strokeDasharray="4 4"
+              strokeDasharray="6 3"
               strokeWidth="2"
             />
             {activePolygon.map((pt, i) => (
@@ -227,27 +381,60 @@ export const Canvas: React.FC<CanvasProps> = ({
           </>
         )}
 
-        {/* Active Path Connection Preview */}
-        {mode === "connect_nodes" && activePathStartNode && (
+        {/* Rectangle preview */}
+        {rectPreview && (
+          <rect
+            x={rectPreview.x}
+            y={rectPreview.y}
+            width={rectPreview.w}
+            height={rectPreview.h}
+            fill="rgba(59, 130, 246, 0.15)"
+            stroke="#3b82f6"
+            strokeDasharray="6 3"
+            strokeWidth="2"
+          />
+        )}
+
+        {/* Circle preview */}
+        {circlePreview && circlePreview.r > 0 && (
+          <circle
+            cx={circlePreview.cx}
+            cy={circlePreview.cy}
+            r={circlePreview.r}
+            fill="rgba(59, 130, 246, 0.15)"
+            stroke="#3b82f6"
+            strokeDasharray="6 3"
+            strokeWidth="2"
+          />
+        )}
+
+        {/* Path drawing preview */}
+        {mode === "draw_path" && pathStart && (
           <line
-            x1={nodes.find(n => n.id === activePathStartNode)?.x || 0}
-            y1={nodes.find(n => n.id === activePathStartNode)?.y || 0}
+            x1={pathStart.point[0]}
+            y1={pathStart.point[1]}
             x2={mousePos.x}
             y2={mousePos.y}
             stroke="#93c5fd"
-            strokeDasharray="4 4"
+            strokeDasharray="6 3"
             strokeWidth="4"
           />
         )}
       </svg>
-      
-      {/* Coordinates Display */}
+
+      {/* Coordinates */}
       <div className="absolute bottom-4 right-4 bg-white/80 px-2 py-1 rounded shadow text-xs text-gray-700 pointer-events-none">
         X: {Math.round(mousePos.x)}, Y: {Math.round(mousePos.y)}
       </div>
 
-      <div className="absolute top-4 left-4 pointer-events-none text-gray-500 font-semibold text-sm drop-shadow-sm">
-        Mode: {mode.replace("_", " ").toUpperCase()}
+      {/* Mode indicator */}
+      <div className="absolute top-4 left-4 pointer-events-none flex items-center gap-2">
+        <span className="bg-white/90 text-gray-700 font-semibold text-xs px-2 py-1 rounded shadow">
+          {modeLabels[mode]}
+        </span>
+        <span className="bg-indigo-600 text-white font-semibold text-xs px-2 py-1 rounded shadow">
+          Floor {currentFloor}
+        </span>
       </div>
     </div>
   );

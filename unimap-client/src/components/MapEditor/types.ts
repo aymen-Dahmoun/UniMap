@@ -1,40 +1,61 @@
-export type EditorBuilding = {
-  id: string;
-  name: string;
-  coordinates: [number, number][];
-};
+export const NODE_TYPES = [
+  "normal", "stairs", "elevator", "entrance", "exit",
+  "emergency_exit", "restroom", "accessible", "public_chair",
+  "info", "desk", "tree", "bench",
+] as const;
+
+export type NodeType = (typeof NODE_TYPES)[number];
 
 export type EditorRoom = {
   id: string;
-  building_id: string;
   name: string;
-  coordinates: [number, number][];
+  floor: number;
+  points: [number, number][];
+};
+
+export type EditorBuilding = {
+  id: string;
+  name: string;
+  floor: number;
+  points: [number, number][];
+  rooms: EditorRoom[];
 };
 
 export type EditorNode = {
   id: string;
+  name: string;
+  floor: number;
   x: number;
   y: number;
+  node_type: NodeType;
 };
 
 export type EditorPath = {
   id: string;
-  start_node: string;
-  end_node: string;
+  start_type: "room" | "node";
+  start_ref: string;
+  end_type: "room" | "node";
+  end_ref: string;
+  distance: number;
+  floor: number;
+  /** polyline points for the geometry */
+  points: [number, number][];
 };
 
 export type EditorMapInfo = {
   name: string;
-  email: string;
-  description: string;
+  user_email: string;
 };
 
-export type EditorMode = 
+export type DrawTarget = "building" | "room";
+
+export type EditorMode =
   | "select"
-  | "draw_building"
-  | "draw_room"
+  | "draw_polygon"
+  | "draw_rectangle"
+  | "draw_circle"
   | "add_node"
-  | "connect_nodes";
+  | "draw_path";
 
 export type SelectionState = {
   type: "building" | "room" | "node" | "path" | null;
