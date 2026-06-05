@@ -20,6 +20,8 @@ import {
   pointInPolygon,
 } from "../utils/geometry";
 
+
+
 export function useMapEditor() {
   /* ── Map metadata ── */
   const [mapInfo, setMapInfoState] = useState<EditorMapInfo>({
@@ -87,6 +89,18 @@ export function useMapEditor() {
   /* ── Floor helpers ── */
   const floorUp = () => setCurrentFloor((f) => f + 1);
   const floorDown = () => setCurrentFloor((f) => f - 1);
+  const getNextNodeName = () => `n${nodes.length + 1}`;
+
+const getNextRoomName = () => {
+  const roomCount = buildings.reduce(
+    (acc, b) => acc + b.rooms.length,
+    0
+  );
+  return `r${roomCount + 1}`;
+};
+
+const getNextBuildingName = () => `building_${buildings.length + 1}`;
+  
 
   /* ── Finalize a drawn shape into a building or room ── */
   const finalizeShape = useCallback(
@@ -96,7 +110,7 @@ export function useMapEditor() {
       if (drawTarget === "building") {
         const b: EditorBuilding = {
           id: genId(),
-          name: "New Building",
+          name: getNextBuildingName(),
           floor: currentFloor,
           points,
           rooms: [],
@@ -117,7 +131,7 @@ export function useMapEditor() {
         }
         const r: EditorRoom = {
           id: genId(),
-          name: "New Room",
+          name: getNextRoomName(),
           floor: currentFloor,
           points,
         };
@@ -141,7 +155,7 @@ export function useMapEditor() {
       } else if (mode === "add_node") {
         const n: EditorNode = {
           id: genId(),
-          name: "New Node",
+          name: getNextNodeName(),
           floor: currentFloor,
           x,
           y,
